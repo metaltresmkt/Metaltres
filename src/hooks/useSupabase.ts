@@ -645,7 +645,9 @@ export interface AIConfig {
   response_style: 'tecnica' | 'objetiva' | 'cordial';
   response_speed: 'instantanea' | 'cadenciada';
   bio_text: string | null;
+  prompt: string | null;
   auto_schedule: boolean;
+  updated_at: string;
 }
 
 export interface WhatsappInstance {

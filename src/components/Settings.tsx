@@ -299,9 +299,26 @@ function AISettings({ data, onChange }: { data: Partial<AIConfig>, onChange: (up
                 </div>
 
                 <div className="space-y-3">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Bio / Instruções da IA</label>
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                        <Info className="w-4 h-4 text-teal-600" />
+                        Prompt Master / Regras da IA
+                    </label>
                     <textarea 
-                        className="w-full px-4 py-2 border border-slate-200 rounded-lg font-medium text-slate-700 h-32"
+                        className="w-full px-4 py-3 border border-slate-200 rounded-lg font-medium text-slate-700 h-48 text-sm bg-slate-50/30 focus:bg-white focus:ring-2 focus:ring-teal-100 transition-all"
+                        value={data.prompt || ''}
+                        onChange={(e) => onChange({ prompt: e.target.value })}
+                        placeholder="Instruções avançadas para o comportamento da IA..."
+                    />
+                    <p className="text-[10px] text-slate-400 font-medium leading-relaxed">
+                        Este é o prompt base que define a personalidade e as regras principais da sua assistente. 
+                        Use para definir como ela deve se comportar, o que pode ou não falar.
+                    </p>
+                </div>
+
+                <div className="space-y-3">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Bio / Apresentação Curta</label>
+                    <textarea 
+                        className="w-full px-4 py-2 border border-slate-200 rounded-lg font-medium text-slate-700 h-24"
                         value={data.bio_text || ''}
                         onChange={(e) => onChange({ bio_text: e.target.value })}
                         placeholder="Ex: Olá! Sou a assistente IA da clínica..."

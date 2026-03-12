@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
 import { Session, User } from '@supabase/supabase-js';
 
@@ -28,62 +28,107 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-
-  // Mock clinic name mapping (later this will come from the 'clinics' table)
-  const [clinicName, setClinicName] = useState('Clínica Central');
+  const [clinicName, setClinicName] = useState('');
+  const initializedRef = useRef(false);
 
   useEffect(() => {
-    // Check active sessions and sets the user
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id);
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+
+    // Safety timeout - if nothing happens in 5 seconds, stop loading
+    const safetyTimeout = setTimeout(() => {
+      console.warn('AuthContext: Safety timeout reached, forcing loading to false');
+      setLoading(false);
+    }, 5000);
+
+    // 1. Check for existing session first
+    supabase.auth.getSession().then(async ({ data: { session: currentSession }, error }) => {
+      console.log('AuthContext: getSession result:', currentSession?.user?.email ?? 'no session', error);
+      
+      if (error) {
+        console.error('AuthContext: getSession error:', error);
+        clearTimeout(safetyTimeout);
+        setLoading(false);
+        return;
+      }
+
+      setSession(currentSession);
+      setUser(currentSession?.user ?? null);
+
+      if (currentSession?.user) {
+        await fetchProfile(currentSession.user.id);
       } else {
         setLoading(false);
       }
+      
+      clearTimeout(safetyTimeout);
     });
 
-    // Listen for changes on auth state (logged in, signed out, etc.)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        await fetchProfile(session.user.id);
+    // 2. Listen for future auth changes (login, logout, token refresh)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+      console.log('AuthContext: Auth event:', event);
+      
+      // Skip INITIAL_SESSION since we handled it with getSession above
+      if (event === 'INITIAL_SESSION') return;
+
+      setSession(newSession);
+      setUser(newSession?.user ?? null);
+
+      if (newSession?.user) {
+        await fetchProfile(newSession.user.id);
       } else {
         setProfile(null);
+        setClinicName('');
         setLoading(false);
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      clearTimeout(safetyTimeout);
+      subscription.unsubscribe();
+    };
   }, []);
 
   async function fetchProfile(userId: string) {
+    console.log('AuthContext: Fetching profile for:', userId);
     try {
-      const { data, error } = await supabase
+      const { data: userData, error: userError } = await supabase
         .from('users')
-        .select('*, clinics(name)')
+        .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
-      
-      if (data) {
-        const userProfile = {
-          id: data.id,
-          clinic_id: data.clinic_id,
-          role: data.role as UserRole,
-          full_name: data.full_name
-        };
-        setProfile(userProfile);
-        if (data.clinics?.name) {
-          setClinicName(data.clinics.name);
+      if (userError) {
+        console.error('AuthContext: User fetch error:', userError);
+        setLoading(false);
+        return;
+      }
+
+      if (userData) {
+        console.log('AuthContext: Profile found:', userData.full_name);
+        setProfile({
+          id: userData.id,
+          clinic_id: userData.clinic_id,
+          role: userData.role as UserRole,
+          full_name: userData.full_name
+        });
+
+        const { data: clinicData } = await supabase
+          .from('clinics')
+          .select('name')
+          .eq('id', userData.clinic_id)
+          .maybeSingle();
+
+        if (clinicData?.name) {
+          setClinicName(clinicData.name);
         }
+      } else {
+        console.warn('AuthContext: No profile found in users table');
       }
     } catch (error) {
-      console.error('Error fetching user profile:', error);
+      console.error('AuthContext: Profile error:', error);
     } finally {
+      console.log('AuthContext: Done loading');
       setLoading(false);
     }
   }
@@ -93,14 +138,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      session, 
-      profile, 
-      clinicName, 
+    <AuthContext.Provider value={{
+      user,
+      session,
+      profile,
+      clinicName,
       userRole: profile?.role || 'secretaria',
       loading,
-      signOut 
+      signOut
     }}>
       {children}
     </AuthContext.Provider>

@@ -1,0 +1,717 @@
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
+
+// ==========================================
+// DOCTORS
+// ==========================================
+export interface Doctor {
+  id: string;
+  clinic_id: string;
+  user_id: string | null;
+  name: string;
+  specialty: string | null;
+  crm: string | null;
+  status: 'atendendo' | 'pausa' | 'offline';
+  is_active: boolean;
+  created_at: string;
+}
+
+export function useDoctors() {
+  const { profile } = useAuth();
+  const [data, setData] = useState<Doctor[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetch = useCallback(async () => {
+    if (!profile?.clinic_id) return;
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('doctors')
+      .select('*')
+      .eq('clinic_id', profile.clinic_id)
+      .order('name');
+    
+    if (error) { setError(error.message); setLoading(false); return; }
+    setData(data || []);
+    setError(null);
+    setLoading(false);
+  }, [profile?.clinic_id]);
+
+  useEffect(() => { 
+    fetch(); 
+    if (!profile?.clinic_id) return;
+
+    const channel = supabase
+      .channel('doctors_realtime')
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'doctors',
+        filter: `clinic_id=eq.${profile.clinic_id}`
+      }, () => {
+        fetch();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [fetch, profile?.clinic_id]);
+
+  const create = async (doc: Partial<Doctor>) => {
+    if (!profile?.clinic_id) return null;
+    const { data, error } = await supabase
+      .from('doctors')
+      .insert({ ...doc, clinic_id: profile.clinic_id })
+      .select()
+      .single();
+    if (error) { setError(error.message); return null; }
+    return data;
+  };
+
+  const update = async (id: string, updates: Partial<Doctor>) => {
+    const { error } = await supabase.from('doctors').update(updates).eq('id', id);
+    if (error) { setError(error.message); return false; }
+    return true;
+  };
+
+  const remove = async (id: string) => {
+    const { error } = await supabase.from('doctors').delete().eq('id', id);
+    if (error) { setError(error.message); return false; }
+    return true;
+  };
+
+  return { data, loading, error, refetch: fetch, create, update, remove };
+}
+
+// ==========================================
+// PATIENTS
+// ==========================================
+export interface Patient {
+  id: string;
+  clinic_id: string;
+  name: string;
+  phone: string | null;
+  email: string | null;
+  cpf: string | null;
+  birth_date: string | null;
+  gender: string | null;
+  weight: string | null;
+  height: string | null;
+  allergies: string[] | null;
+  notes: string | null;
+  is_active: boolean;
+  created_at: string;
+}
+
+export function usePatients() {
+  const { profile } = useAuth();
+  const [data, setData] = useState<Patient[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetch = useCallback(async () => {
+    if (!profile?.clinic_id) return;
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('patients')
+      .select('*')
+      .eq('clinic_id', profile.clinic_id)
+      .order('name');
+    
+    if (error) { setError(error.message); setLoading(false); return; }
+    setData(data || []);
+    setError(null);
+    setLoading(false);
+  }, [profile?.clinic_id]);
+
+  useEffect(() => { 
+    fetch(); 
+    if (!profile?.clinic_id) return;
+
+    const channel = supabase
+      .channel('patients_realtime')
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'patients',
+        filter: `clinic_id=eq.${profile.clinic_id}`
+      }, () => {
+        fetch();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [fetch, profile?.clinic_id]);
+
+  const create = async (p: Partial<Patient>) => {
+    if (!profile?.clinic_id) return null;
+    const { data, error } = await supabase
+      .from('patients')
+      .insert({ ...p, clinic_id: profile.clinic_id })
+      .select()
+      .single();
+    if (error) { setError(error.message); return null; }
+    return data;
+  };
+
+  const update = async (id: string, updates: Partial<Patient>) => {
+    const { error } = await supabase.from('patients').update(updates).eq('id', id);
+    if (error) { setError(error.message); return false; }
+    return true;
+  };
+
+  const remove = async (id: string) => {
+    const { error } = await supabase.from('patients').delete().eq('id', id);
+    if (error) { setError(error.message); return false; }
+    return true;
+  };
+
+  return { data, loading, error, refetch: fetch, create, update, remove };
+}
+
+// ==========================================
+// APPOINTMENTS
+// ==========================================
+export interface Appointment {
+  id: string;
+  clinic_id: string;
+  patient_id: string;
+  doctor_id: string;
+  date: string;
+  time: string;
+  status: 'pendente' | 'confirmado' | 'realizado' | 'cancelado' | 'faltou';
+  source: 'ia' | 'manual' | 'site' | null;
+  notes: string | null;
+  created_at: string;
+  // Joined
+  patient?: { name: string };
+  doctor?: { name: string };
+}
+
+export function useAppointments() {
+  const { profile } = useAuth();
+  const [data, setData] = useState<Appointment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetch = useCallback(async () => {
+    if (!profile?.clinic_id) return;
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('appointments')
+      .select('*, patient:patients(name), doctor:doctors(name)')
+      .eq('clinic_id', profile.clinic_id)
+      .order('date', { ascending: false })
+      .order('time', { ascending: true });
+    
+    if (error) { setError(error.message); setLoading(false); return; }
+    setData(data || []);
+    setError(null);
+    setLoading(false);
+  }, [profile?.clinic_id]);
+
+  useEffect(() => { 
+    fetch(); 
+    if (!profile?.clinic_id) return;
+
+    const channel = supabase
+      .channel('appointments_realtime')
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'appointments',
+        filter: `clinic_id=eq.${profile.clinic_id}`
+      }, () => {
+        fetch();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [fetch, profile?.clinic_id]);
+
+  const create = async (apt: Partial<Appointment>) => {
+    if (!profile?.clinic_id) return null;
+    const { data, error } = await supabase
+      .from('appointments')
+      .insert({ ...apt, clinic_id: profile.clinic_id })
+      .select('*, patient:patients(name), doctor:doctors(name)')
+      .single();
+    if (error) { setError(error.message); return null; }
+    return data;
+  };
+
+  const update = async (id: string, updates: Partial<Appointment>) => {
+    const { error } = await supabase.from('appointments').update(updates).eq('id', id);
+    if (error) { setError(error.message); return false; }
+    return true;
+  };
+
+  const remove = async (id: string) => {
+    const { error } = await supabase.from('appointments').delete().eq('id', id);
+    if (error) { setError(error.message); return false; }
+    return true;
+  };
+
+  return { data, loading, error, refetch: fetch, create, update, remove };
+}
+
+// ==========================================
+// LEADS + FUNNEL STAGES
+// ==========================================
+export interface FunnelStage {
+  id: string;
+  clinic_id: string;
+  name: string;
+  position: number;
+  color: string | null;
+  is_system: boolean;
+  created_at: string;
+}
+
+export interface Lead {
+  id: string;
+  clinic_id: string;
+  name: string;
+  phone: string | null;
+  email: string | null;
+  source: string | null;
+  stage_id: string | null;
+  estimated_value: number | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export function useFunnelStages() {
+  const { profile } = useAuth();
+  const [data, setData] = useState<FunnelStage[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetch = useCallback(async () => {
+    if (!profile?.clinic_id) return;
+    setLoading(true);
+    const { data } = await supabase
+      .from('funnel_stages')
+      .select('*')
+      .eq('clinic_id', profile.clinic_id)
+      .order('position');
+    setData(data || []);
+    setLoading(false);
+  }, [profile?.clinic_id]);
+
+  useEffect(() => { 
+    fetch(); 
+    if (!profile?.clinic_id) return;
+
+    const channel = supabase
+      .channel('funnel_stages_realtime')
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'funnel_stages',
+        filter: `clinic_id=eq.${profile.clinic_id}`
+      }, () => {
+        fetch();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [fetch, profile?.clinic_id]);
+
+  return { data, loading, refetch: fetch };
+}
+
+export function useLeads() {
+  const { profile } = useAuth();
+  const [data, setData] = useState<Lead[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetch = useCallback(async () => {
+    if (!profile?.clinic_id) return;
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('leads')
+      .select('*')
+      .eq('clinic_id', profile.clinic_id)
+      .order('created_at', { ascending: false });
+    
+    if (error) { setError(error.message); setLoading(false); return; }
+    setData(data || []);
+    setError(null);
+    setLoading(false);
+  }, [profile?.clinic_id]);
+
+  useEffect(() => { 
+    fetch(); 
+    if (!profile?.clinic_id) return;
+
+    const channel = supabase
+      .channel('leads_realtime')
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'leads',
+        filter: `clinic_id=eq.${profile.clinic_id}`
+      }, () => {
+        fetch();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [fetch, profile?.clinic_id]);
+
+  const create = async (lead: Partial<Lead>) => {
+    if (!profile?.clinic_id) return null;
+    const { data, error } = await supabase
+      .from('leads')
+      .insert({ ...lead, clinic_id: profile.clinic_id })
+      .select()
+      .single();
+    if (error) { setError(error.message); return null; }
+    return data;
+  };
+
+  const update = async (id: string, updates: Partial<Lead>) => {
+    const { error } = await supabase.from('leads').update(updates).eq('id', id);
+    if (error) { setError(error.message); return false; }
+    return true;
+  };
+
+  const remove = async (id: string) => {
+    const { error } = await supabase.from('leads').delete().eq('id', id);
+    if (error) { setError(error.message); return false; }
+    return true;
+  };
+
+  return { data, loading, error, refetch: fetch, create, update, remove };
+}
+
+// ==========================================
+// DASHBOARD STATS (Realtime automatic refetch)
+// ==========================================
+export interface DashboardStats {
+  totalAppointments: number;
+  totalRevenue: number;
+  totalMessages: number;
+  newPatients: number;
+}
+
+export function useDashboardStats() {
+  const { profile } = useAuth();
+  const [data, setData] = useState<DashboardStats>({
+    totalAppointments: 0, totalRevenue: 0, totalMessages: 0, newPatients: 0
+  });
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    if (!profile?.clinic_id) return;
+    setLoading(true);
+    const clinicId = profile!.clinic_id;
+
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+
+    const [aptsRes, revenueRes, patientsRes] = await Promise.all([
+      supabase.from('appointments').select('id', { count: 'exact', head: true })
+        .eq('clinic_id', clinicId).gte('date', startOfMonth).lte('date', endOfMonth),
+      supabase.from('financial_transactions').select('amount')
+        .eq('clinic_id', clinicId).eq('type', 'receita').eq('status', 'pago')
+        .gte('date', startOfMonth).lte('date', endOfMonth),
+      supabase.from('patients').select('id', { count: 'exact', head: true })
+        .eq('clinic_id', clinicId).gte('created_at', startOfMonth),
+    ]);
+
+    const totalRevenue = (revenueRes.data || []).reduce((sum, t) => sum + Number(t.amount || 0), 0);
+
+    setData({
+      totalAppointments: aptsRes.count || 0,
+      totalRevenue,
+      totalMessages: 0,
+      newPatients: patientsRes.count || 0,
+    });
+    setLoading(false);
+  }, [profile?.clinic_id]);
+
+  useEffect(() => {
+    load();
+    if (!profile?.clinic_id) return;
+
+    // Sincronizar dashboard com mudanças em tabelas chave
+    const channel = supabase
+      .channel('dashboard_realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments', filter: `clinic_id=eq.${profile.clinic_id}` }, () => load())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'financial_transactions', filter: `clinic_id=eq.${profile.clinic_id}` }, () => load())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'patients', filter: `clinic_id=eq.${profile.clinic_id}` }, () => load())
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [load, profile?.clinic_id]);
+
+  return { data, loading, refetch: load };
+}
+
+// ==========================================
+// FINANCIAL TRANSACTIONS
+// ==========================================
+export interface FinancialTransaction {
+  id: string;
+  clinic_id: string;
+  patient_id: string | null;
+  appointment_id: string | null;
+  type: 'receita' | 'despesa';
+  category: string | null;
+  amount: number;
+  description: string | null;
+  payment_method: 'pix' | 'cartao' | 'dinheiro' | 'plano' | null;
+  status: 'pago' | 'pendente' | 'cancelado';
+  date: string;
+  created_at: string;
+}
+
+export function useFinancial() {
+  const { profile } = useAuth();
+  const [data, setData] = useState<FinancialTransaction[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetch = useCallback(async () => {
+    if (!profile?.clinic_id) return;
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('financial_transactions')
+      .select('*')
+      .eq('clinic_id', profile.clinic_id)
+      .order('date', { ascending: false });
+    
+    if (error) { setError(error.message); setLoading(false); return; }
+    setData(data || []);
+    setError(null);
+    setLoading(false);
+  }, [profile?.clinic_id]);
+
+  useEffect(() => { 
+    fetch(); 
+    if (!profile?.clinic_id) return;
+
+    const channel = supabase
+      .channel('financial_realtime')
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'financial_transactions',
+        filter: `clinic_id=eq.${profile.clinic_id}`
+      }, () => {
+        fetch();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [fetch, profile?.clinic_id]);
+
+  const create = async (tx: Partial<FinancialTransaction>) => {
+    if (!profile?.clinic_id) return null;
+    const { data, error } = await supabase
+      .from('financial_transactions')
+      .insert({ ...tx, clinic_id: profile.clinic_id })
+      .select()
+      .single();
+    if (error) { setError(error.message); return null; }
+    return data;
+  };
+
+  const update = async (id: string, updates: Partial<FinancialTransaction>) => {
+    const { error } = await supabase.from('financial_transactions').update(updates).eq('id', id);
+    if (error) { setError(error.message); return false; }
+    return true;
+  };
+
+  const remove = async (id: string) => {
+    const { error } = await supabase.from('financial_transactions').delete().eq('id', id);
+    if (error) { setError(error.message); return false; }
+    return true;
+  };
+
+  return { data, loading, error, refetch: fetch, create, update, remove };
+}
+
+// ==========================================
+// MEDICAL RECORDS
+// ==========================================
+export interface MedicalRecord {
+  id: string;
+  clinic_id: string;
+  patient_id: string;
+  doctor_id: string;
+  appointment_id: string | null;
+  type: 'consulta' | 'retorno' | 'exame' | 'procedimento';
+  description: string | null;
+  diagnosis: string | null;
+  prescription: string | null;
+  attachments: any;
+  created_at: string;
+  // Joined
+  doctor?: { name: string };
+}
+
+export function useMedicalRecords(patientId: string | null) {
+  const { profile } = useAuth();
+  const [data, setData] = useState<MedicalRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetch = useCallback(async () => {
+    if (!patientId) { setData([]); setLoading(false); return; }
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('medical_records')
+      .select('*, doctor:doctors(name)')
+      .eq('patient_id', patientId)
+      .order('created_at', { ascending: false });
+    
+    if (error) { setError(error.message); setLoading(false); return; }
+    setData(data || []);
+    setError(null);
+    setLoading(false);
+  }, [patientId]);
+
+  useEffect(() => { 
+    fetch(); 
+    if (!patientId) return;
+
+    const channel = supabase
+      .channel(`records_${patientId}`)
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'medical_records',
+        filter: `patient_id=eq.${patientId}`
+      }, () => {
+        fetch();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [fetch, patientId]);
+
+  const create = async (record: Partial<MedicalRecord>) => {
+    if (!profile?.clinic_id) return null;
+    const { data, error } = await supabase
+      .from('medical_records')
+      .insert({ ...record, clinic_id: profile.clinic_id })
+      .select('*, doctor:doctors(name)')
+      .single();
+    if (error) { setError(error.message); return null; }
+    return data;
+  };
+
+  const update = async (id: string, updates: Partial<MedicalRecord>) => {
+    const { error } = await supabase.from('medical_records').update(updates).eq('id', id);
+    if (error) { setError(error.message); return false; }
+    return true;
+  };
+
+  const remove = async (id: string) => {
+    const { error } = await supabase.from('medical_records').delete().eq('id', id);
+    if (error) { setError(error.message); return false; }
+    return true;
+  };
+
+  return { data, loading, error, refetch: fetch, create, update, remove };
+}
+
+// ==========================================
+// SETTINGS: CLINIC, AI & WHATSAPP
+// ==========================================
+export interface Clinic {
+  id: string;
+  name: string;
+  cnpj: string | null;
+  phone: string | null;
+  address: string | null;
+  logo_url: string | null;
+  primary_color: string | null;
+  plan: 'free' | 'pro' | 'enterprise';
+}
+
+export interface AIConfig {
+  id: string;
+  clinic_id: string;
+  tone: number;
+  response_style: 'tecnica' | 'objetiva' | 'cordial';
+  response_speed: 'instantanea' | 'cadenciada';
+  bio_text: string | null;
+  auto_schedule: boolean;
+}
+
+export interface WhatsappInstance {
+  id: string;
+  clinic_id: string;
+  api_url: string;
+  api_token: string;
+  phone_number: string | null;
+  status: 'connected' | 'disconnected' | 'qr_pending';
+  connected_at: string | null;
+}
+
+export function useSettings() {
+  const { profile } = useAuth();
+  const [clinic, setClinic] = useState<Clinic | null>(null);
+  const [aiConfig, setAIConfig] = useState<AIConfig | null>(null);
+  const [whatsapp, setWhatsapp] = useState<WhatsappInstance | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const fetch = useCallback(async () => {
+    if (!profile?.clinic_id) return;
+    setLoading(true);
+
+    const [clinicRes, aiRes, waRes] = await Promise.all([
+      supabase.from('clinics').select('*').eq('id', profile.clinic_id).maybeSingle(),
+      supabase.from('ai_config').select('*').eq('clinic_id', profile.clinic_id).maybeSingle(),
+      supabase.from('whatsapp_instances').select('*').eq('clinic_id', profile.clinic_id).maybeSingle(),
+    ]);
+
+    setClinic(clinicRes.data);
+    setAIConfig(aiRes.data);
+    setWhatsapp(waRes.data);
+    setLoading(false);
+  }, [profile?.clinic_id]);
+
+  useEffect(() => { fetch(); }, [fetch]);
+
+  const updateClinic = async (updates: Partial<Clinic>) => {
+    if (!profile?.clinic_id) return false;
+    const { error } = await supabase.from('clinics').update(updates).eq('id', profile.clinic_id);
+    if (!error) await fetch();
+    return !error;
+  };
+
+  const updateAI = async (updates: Partial<AIConfig>) => {
+    if (!profile?.clinic_id) return false;
+    const { error } = await supabase.from('ai_config').update(updates).eq('clinic_id', profile.clinic_id);
+    if (!error) await fetch();
+    return !error;
+  };
+
+  const updateWhatsapp = async (updates: Partial<WhatsappInstance>) => {
+    if (!profile?.clinic_id) return false;
+    
+    // Check if instance exists
+    if (!whatsapp) {
+      const { error } = await supabase.from('whatsapp_instances').insert({
+        ...updates,
+        clinic_id: profile.clinic_id
+      });
+      if (!error) await fetch();
+      return !error;
+    } else {
+      const { error } = await supabase.from('whatsapp_instances').update(updates).eq('clinic_id', profile.clinic_id);
+      if (!error) await fetch();
+      return !error;
+    }
+  };
+
+  return { clinic, aiConfig, whatsapp, loading, refetch: fetch, updateClinic, updateAI, updateWhatsapp };
+}
+

@@ -867,22 +867,17 @@ export function useChatMessages(leadId?: string) {
     fetch(); 
     if (!profile?.clinic_id) return;
 
+    // Use event: '*' and simply refetch to guarantee the UI matches the DB state,
+    // avoiding parsing or appending issues with complex JSON updates.
     const channel = supabase
       .channel(`chat_${leadId || 'all'}`)
       .on('postgres_changes', { 
-        event: 'INSERT', 
+        event: '*', 
         schema: 'public', 
         table: 'chat_messages',
         filter: leadId ? `lead_id=eq.${leadId}` : `clinic_id=eq.${profile.clinic_id}`
-      }, (payload) => {
-        // Only add if it belongs to current filter
-        const newMsg = payload.new as ChatMessage;
-        if (!leadId || newMsg.lead_id === leadId) {
-          setData(prev => [...prev, {
-            ...newMsg,
-            message: parseMessage(newMsg.message)
-          }]);
-        }
+      }, () => {
+        fetch();
       })
       .subscribe();
 

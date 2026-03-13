@@ -28,10 +28,11 @@ import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useAuth } from "../contexts/AuthContext";
 import { usePatients, useMedicalRecords, useDoctors, Patient, MedicalRecord } from "../hooks/useSupabase";
+import { PatientModal } from "./PatientModal";
 
 export function MedicalRecords() {
     const { userRole } = useAuth();
-    const { data: patients, loading: patientsLoading, create: createPatient, update: updatePatient, remove: removePatient } = usePatients();
+    const { data: patients, loading: patientsLoading, create: createPatient, update: updatePatient, remove: removePatient, refetch: refetchPatients } = usePatients();
     const { data: doctors } = useDoctors();
     const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
@@ -65,9 +66,12 @@ export function MedicalRecords() {
         }
     }, [patients]);
 
-    const filteredPatients = patients.filter(p =>
-        p.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredPatients = patients.filter(p => {
+        const term = searchTerm.toLowerCase();
+        return p.name.toLowerCase().includes(term) || 
+               p.cpf?.includes(term) || 
+               p.phone?.includes(term);
+    });
 
     const getInitials = (name: string) => name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
     const getAge = (birthDate: string | null) => {
@@ -99,16 +103,6 @@ export function MedicalRecords() {
         setShowPatientModal(true);
     };
 
-    const handlePatientSubmit = async () => {
-        if (!patientFormData.name.trim()) return;
-        setSubmitting(true);
-        const payload = { ...patientFormData, is_active: true };
-        if (patientModalMode === 'create') await createPatient(payload);
-        else if (selectedPatient) await updatePatient(selectedPatient.id, payload);
-        setShowPatientModal(false);
-        setSubmitting(false);
-    };
-
     const handleDeletePatient = async () => {
         if (!selectedPatient) return;
         setSubmitting(true);
@@ -116,6 +110,13 @@ export function MedicalRecords() {
         setSelectedPatient(null);
         setShowDeletePatientConfirm(false);
         setSubmitting(false);
+    };
+
+    const handlePatientSuccess = (patient: Patient) => {
+        if (patientModalMode === 'create') {
+            setSelectedPatient(patient);
+        }
+        refetchPatients();
     };
 
     // Medical Record Actions
@@ -329,62 +330,13 @@ export function MedicalRecords() {
             )}
 
             {/* Patient Modal */}
-            <AnimatePresence>
-                {showPatientModal && (
-                    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowPatientModal(false)}>
-                        <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="bg-white rounded-xl shadow-xl w-full max-w-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
-                            <div className="flex items-center justify-between p-6 border-b border-slate-100">
-                                <h3 className="text-lg font-bold text-slate-900">{patientModalMode === 'create' ? 'Novo Paciente' : 'Editar Paciente'}</h3>
-                                <button onClick={() => setShowPatientModal(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
-                            </div>
-                            <div className="p-6 overflow-y-auto max-h-[70vh] space-y-4">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="md:col-span-2">
-                                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1.5 ml-1">Nome Completo *</label>
-                                        <input type="text" value={patientFormData.name} onChange={e => setPatientFormData(p => ({ ...p, name: e.target.value }))} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-teal-200 font-bold text-sm" placeholder="Nome do Paciente" />
-                                    </div>
-                                    <div>
-                                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1.5 ml-1">Telefone</label>
-                                        <input type="text" value={patientFormData.phone} onChange={e => setPatientFormData(p => ({ ...p, phone: e.target.value }))} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-teal-200 font-bold text-sm" placeholder="(00) 00000-0000" />
-                                    </div>
-                                    <div>
-                                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1.5 ml-1">CPF</label>
-                                        <input type="text" value={patientFormData.cpf} onChange={e => setPatientFormData(p => ({ ...p, cpf: e.target.value }))} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-teal-200 font-bold text-sm" placeholder="000.000.000-00" />
-                                    </div>
-                                    <div>
-                                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1.5 ml-1">Data Nascimento</label>
-                                        <input type="date" value={patientFormData.birth_date} onChange={e => setPatientFormData(p => ({ ...p, birth_date: e.target.value }))} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-teal-200 font-medium text-sm" />
-                                    </div>
-                                    <div>
-                                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1.5 ml-1">Gênero</label>
-                                        <select value={patientFormData.gender} onChange={e => setPatientFormData(p => ({ ...p, gender: e.target.value }))} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-teal-200 font-bold text-sm">
-                                            <option value="">Selecione</option>
-                                            <option value="masculino">Masculino</option>
-                                            <option value="feminino">Feminino</option>
-                                            <option value="outro">Outro</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1.5 ml-1">Peso (kg)</label>
-                                        <input type="number" step="0.1" value={patientFormData.weight} onChange={e => setPatientFormData(p => ({ ...p, weight: e.target.value }))} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-teal-200 font-bold text-sm" placeholder="70.5" />
-                                    </div>
-                                    <div>
-                                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1.5 ml-1">Altura (m)</label>
-                                        <input type="number" step="0.01" value={patientFormData.height} onChange={e => setPatientFormData(p => ({ ...p, height: e.target.value }))} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-teal-200 font-bold text-sm" placeholder="1.75" />
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="flex gap-3 p-6 border-t border-slate-100 bg-slate-50">
-                                <Button variant="outline" className="flex-1 font-bold" onClick={() => setShowPatientModal(false)}>Cancelar</Button>
-                                <Button className="flex-1 font-bold" onClick={handlePatientSubmit} disabled={!patientFormData.name.trim() || submitting}>
-                                    {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
-                                    {patientModalMode === 'create' ? 'Cadastrar' : 'Salvar'}
-                                </Button>
-                            </div>
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
+            <PatientModal
+                isOpen={showPatientModal}
+                onClose={() => setShowPatientModal(false)}
+                onSuccess={handlePatientSuccess}
+                initialData={selectedPatient}
+                mode={patientModalMode}
+            />
 
             {/* Medical Record Modal */}
             <AnimatePresence>

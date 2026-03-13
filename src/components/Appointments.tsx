@@ -38,13 +38,29 @@ import {
 import { ptBR } from "date-fns/locale";
 import { useAuth } from "../contexts/AuthContext";
 import { useAppointments, useDoctors, usePatients } from "../hooks/useSupabase";
+import { supabase } from "../lib/supabase";
 import { DoctorScheduleSettings } from "./DoctorScheduleSettings";
+import { PatientModal } from "./PatientModal";
+import { PatientSearchSelector } from "./PatientSearchSelector";
+
+function timeToMins(timeStr: string) {
+  if (!timeStr) return 0;
+  const [h, m] = timeStr.split(':').map(Number)
+  return h * 60 + m
+}
+
+function minsToTime(mins: number) {
+  const h = Math.floor(mins / 60).toString().padStart(2, '0')
+  const m = (mins % 60).toString().padStart(2, '0')
+  return `${h}:${m}`
+}
 
 export function Appointments() {
   const { userRole, profile } = useAuth();
   const { data: appointments, loading, create, update, remove } = useAppointments();
   const { data: doctors } = useDoctors();
-  const { data: patients } = usePatients();
+  const { data: patients, refetch: refetchPatients } = usePatients();
+  const [lastCreatedPatient, setLastCreatedPatient] = useState<any>(null);
   const [filter, setFilter] = useState("Todos");
   const [dateFilter, setDateFilter] = useState<"all" | "today">("all");
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
@@ -58,9 +74,46 @@ export function Appointments() {
   const [showScheduleSettings, setShowScheduleSettings] = useState(false);
   const [doctorToConfigure, setDoctorToConfigure] = useState<any>(null);
 
+  const [showPatientModal, setShowPatientModal] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   const currentDoctor = useMemo(() => {
     return doctors.find(d => d.user_id === profile?.id);
   }, [doctors, profile?.id]);
+
+  const availableSlots = useMemo(() => {
+    if (!formData.doctor_id || !formData.date) return null;
+
+    const doctor = doctors.find(d => d.id === formData.doctor_id);
+    if (!doctor) return null;
+
+    if (doctor.days_off && doctor.days_off.includes(formData.date)) {
+      return []; // Dia de folga
+    }
+
+    const localDate = new Date(`${formData.date}T00:00:00`);
+    const dayOfWeek = localDate.getDay().toString();
+
+    const duration = doctor.consultation_duration || 30;
+    const shifts = doctor.working_hours?.[dayOfWeek] || [];
+    let doctorSlots: string[] = [];
+
+    shifts.forEach((shift: any) => {
+      let currentMins = timeToMins(shift.start);
+      const endMins = timeToMins(shift.end);
+
+      while (currentMins + duration <= endMins) {
+        doctorSlots.push(minsToTime(currentMins));
+        currentMins += duration;
+      }
+    });
+
+    const bookedTimes = appointments
+      .filter(a => a.doctor_id === doctor.id && a.date === formData.date && a.id !== selectedAppointment?.id && a.status !== 'cancelado' && a.status !== 'faltou')
+      .map(a => a.time.toString().substring(0, 5));
+
+    return doctorSlots.filter(slot => !bookedTimes.includes(slot));
+  }, [formData.doctor_id, formData.date, doctors, appointments, selectedAppointment]);
 
   const filteredAppointments = useMemo(() => {
     return appointments.filter((apt) => {
@@ -96,6 +149,13 @@ export function Appointments() {
     setSelectedAppointment(null);
     setShowModal(false);
     setSubmitting(false);
+  };
+
+  const handlePatientSuccess = (patient: any) => {
+    setLastCreatedPatient(patient);
+    setFormData(prev => ({ ...prev, patient_id: patient.id }));
+    refetchPatients();
+    setShowPatientModal(false);
   };
 
   const handleDelete = async () => {
@@ -297,10 +357,13 @@ export function Appointments() {
               <div className="p-6 space-y-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Paciente *</label>
-                  <select value={formData.patient_id} onChange={e => setFormData(p => ({ ...p, patient_id: e.target.value }))} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-200 font-medium text-sm">
-                    <option value="">Selecione...</option>
-                    {patients.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                  </select>
+                  <PatientSearchSelector
+                    patients={patients}
+                    selectedId={formData.patient_id}
+                    onSelect={(p) => setFormData(prev => ({ ...prev, patient_id: p.id }))}
+                    onNewPatient={() => setShowPatientModal(true)}
+                    lastCreatedPatient={lastCreatedPatient}
+                  />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Médico *</label>
@@ -312,25 +375,61 @@ export function Appointments() {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Data *</label>
-                    <input type="date" value={formData.date} onChange={e => setFormData(p => ({ ...p, date: e.target.value }))} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-200 font-medium text-sm" />
+                    <input type="date" value={formData.date} onChange={e => setFormData(p => ({ ...p, date: e.target.value, time: '' }))} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-200 font-medium text-sm" />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Horário *</label>
-                    <input type="time" value={formData.time} onChange={e => setFormData(p => ({ ...p, time: e.target.value }))} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-200 font-medium text-sm" />
+                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Status</label>
+                    <select value={formData.status} onChange={e => setFormData(p => ({ ...p, status: e.target.value as any }))} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-200 font-medium text-sm">
+                      {Object.entries(statusLabel).map(([value, label]) => (
+                        <option key={value} value={value}>{label}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Status</label>
-                  <select value={formData.status} onChange={e => setFormData(p => ({ ...p, status: e.target.value as any }))} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-200 font-medium text-sm">
-                    {Object.entries(statusLabel).map(([value, label]) => (
-                      <option key={value} value={value}>{label}</option>
-                    ))}
-                  </select>
-                </div>
+
+                {formData.doctor_id && formData.date && (
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Horário *</label>
+                    {availableSlots === null ? (
+                       <p className="text-sm text-slate-500">Selecione médico e data.</p>
+                     ) : availableSlots.length === 0 ? (
+                       <div className="p-3 bg-rose-50 border border-rose-100 rounded-lg text-rose-600 text-sm font-medium flex items-center">
+                          <AlertCircle className="w-4 h-4 mr-2" />
+                          Esse médico não atende nesta data.
+                       </div>
+                     ) : (
+                       <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 mt-1">
+                         {availableSlots.map(slot => (
+                           <button
+                             key={slot}
+                             type="button"
+                             onClick={() => setFormData(p => ({ ...p, time: slot }))}
+                             className={cn(
+                               "py-2 text-sm font-semibold rounded-lg transition-all border",
+                               formData.time === slot
+                                 ? "bg-teal-600 text-white border-teal-600"
+                                 : "bg-white text-slate-600 border-slate-200 hover:border-teal-400 hover:text-teal-700 hover:bg-teal-50"
+                             )}
+                           >
+                             {slot}
+                           </button>
+                         ))}
+                       </div>
+                     )}
+                  </div>
+                )}
+
                 <div>
                   <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Observações</label>
                   <textarea value={formData.notes} onChange={e => setFormData(p => ({ ...p, notes: e.target.value }))} rows={2} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-200 font-medium text-sm resize-none" placeholder="Observações opcionais..." />
                 </div>
+
+                {error && (
+                  <div className="p-3 bg-rose-50 border border-rose-100 rounded-lg text-rose-600 text-xs font-medium flex items-center">
+                    <AlertCircle className="w-3.5 h-3.5 mr-2" />
+                    {error}
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-3 p-6 border-t border-slate-100 bg-slate-50">
@@ -384,6 +483,11 @@ export function Appointments() {
           />
         )}
       </AnimatePresence>
+      <PatientModal
+        isOpen={showPatientModal}
+        onClose={() => setShowPatientModal(false)}
+        onSuccess={handlePatientSuccess}
+      />
     </div>
   );
 }

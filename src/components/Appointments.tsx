@@ -17,6 +17,7 @@ import {
   Edit2,
   Trash2,
   AlertCircle,
+  Settings,
 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -37,9 +38,10 @@ import {
 import { ptBR } from "date-fns/locale";
 import { useAuth } from "../contexts/AuthContext";
 import { useAppointments, useDoctors, usePatients } from "../hooks/useSupabase";
+import { DoctorScheduleSettings } from "./DoctorScheduleSettings";
 
 export function Appointments() {
-  const { userRole } = useAuth();
+  const { userRole, profile } = useAuth();
   const { data: appointments, loading, create, update, remove } = useAppointments();
   const { data: doctors } = useDoctors();
   const { data: patients } = usePatients();
@@ -53,6 +55,12 @@ export function Appointments() {
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
   const [formData, setFormData] = useState({ patient_id: '', doctor_id: '', date: '', time: '', notes: '', status: 'pendente' as any });
   const [submitting, setSubmitting] = useState(false);
+  const [showScheduleSettings, setShowScheduleSettings] = useState(false);
+  const [doctorToConfigure, setDoctorToConfigure] = useState<any>(null);
+
+  const currentDoctor = useMemo(() => {
+    return doctors.find(d => d.user_id === profile?.id);
+  }, [doctors, profile?.id]);
 
   const filteredAppointments = useMemo(() => {
     return appointments.filter((apt) => {
@@ -149,10 +157,17 @@ export function Appointments() {
             {dateFilter === "today" ? "Consultas agendadas para hoje." : "Acompanhe todos os agendamentos."}
           </p>
         </motion.div>
-        <Button className="py-5 px-6 group" onClick={() => { setSelectedAppointment(null); setFormData({ patient_id: '', doctor_id: '', date: '', time: '', notes: '', status: 'pendente' }); setShowModal(true); }}>
-          <Plus className="w-5 h-5 mr-2 group-hover:rotate-90 transition-transform" />
-          Nova Consulta
-        </Button>
+        <div className="flex items-center gap-3">
+          {userRole === 'medico' && currentDoctor && (
+             <Button variant="outline" className="py-5 px-6 font-bold" onClick={() => { setDoctorToConfigure(currentDoctor); setShowScheduleSettings(true); }}>
+               <Settings className="w-5 h-5 mr-2 text-slate-500" /> Configurar Agenda
+             </Button>
+          )}
+          <Button className="py-5 px-6 group" onClick={() => { setSelectedAppointment(null); setFormData({ patient_id: '', doctor_id: '', date: '', time: '', notes: '', status: 'pendente' }); setShowModal(true); }}>
+            <Plus className="w-5 h-5 mr-2 group-hover:rotate-90 transition-transform" />
+            Nova Consulta
+          </Button>
+        </div>
       </div>
 
       <Card className="border border-slate-200 shadow-sm overflow-hidden">
@@ -355,6 +370,18 @@ export function Appointments() {
               </div>
             </motion.div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showScheduleSettings && doctorToConfigure && (
+          <DoctorScheduleSettings 
+            doctor={doctorToConfigure} 
+            onClose={() => {
+              setShowScheduleSettings(false);
+              setDoctorToConfigure(null);
+            }} 
+          />
         )}
       </AnimatePresence>
     </div>

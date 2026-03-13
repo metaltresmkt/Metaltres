@@ -15,6 +15,7 @@ import {
 import { cn } from "@/src/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useDoctors, Doctor } from "../hooks/useSupabase";
+import { DoctorScheduleSettings } from "./DoctorScheduleSettings";
 
 export function DoctorsManagement() {
     const { data: doctors, loading, error, create, update, remove } = useDoctors();
@@ -24,6 +25,8 @@ export function DoctorsManagement() {
     const [formData, setFormData] = useState({ name: '', specialty: '', crm: '' });
     const [submitting, setSubmitting] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+    const [showScheduleSettings, setShowScheduleSettings] = useState(false);
+    const [doctorToConfigure, setDoctorToConfigure] = useState<Doctor | null>(null);
 
     const openCreateModal = () => {
         setModalMode('create');
@@ -165,7 +168,14 @@ export function DoctorsManagement() {
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-2">
-                                    <Button variant="outline" className="w-full h-9 flex gap-2 text-xs font-bold">
+                                    <Button 
+                                        variant="outline" 
+                                        className="w-full h-9 flex gap-2 text-xs font-bold"
+                                        onClick={() => {
+                                            setDoctorToConfigure(doc);
+                                            setShowScheduleSettings(true);
+                                        }}
+                                    >
                                         <Clock className="w-3.5 h-3.5" />
                                         Agenda
                                     </Button>
@@ -323,6 +333,18 @@ export function DoctorsManagement() {
                             </div>
                         </motion.div>
                     </motion.div>
+                )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+                {showScheduleSettings && doctorToConfigure && (
+                    <DoctorScheduleSettings 
+                        doctor={doctorToConfigure} 
+                        onClose={() => {
+                            setShowScheduleSettings(false);
+                            setDoctorToConfigure(null);
+                        }} 
+                    />
                 )}
             </AnimatePresence>
         </div>

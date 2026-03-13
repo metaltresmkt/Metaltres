@@ -15,6 +15,9 @@ export interface Doctor {
   status: 'atendendo' | 'pausa' | 'offline';
   is_active: boolean;
   created_at: string;
+  working_hours?: any;
+  consultation_duration?: number;
+  days_off?: string[];
 }
 
 export function useDoctors() {
@@ -189,7 +192,7 @@ export interface Appointment {
 }
 
 export function useAppointments() {
-  const { profile } = useAuth();
+  const { profile, userRole } = useAuth();
   const [data, setData] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -197,10 +200,17 @@ export function useAppointments() {
   const fetch = useCallback(async () => {
     if (!profile?.clinic_id) return;
     setLoading(true);
-    const { data, error } = await supabase
+    
+    let query = supabase
       .from('appointments')
-      .select('*, patient:patients(name), doctor:doctors(name)')
-      .eq('clinic_id', profile.clinic_id)
+      .select('*, patient:patients(name), doctor:doctors!inner(name, user_id)')
+      .eq('clinic_id', profile.clinic_id);
+
+    if (userRole === 'medico') {
+      query = query.eq('doctor.user_id', profile.id);
+    }
+
+    const { data, error } = await query
       .order('date', { ascending: false })
       .order('time', { ascending: true });
     
@@ -208,7 +218,7 @@ export function useAppointments() {
     setData(data || []);
     setError(null);
     setLoading(false);
-  }, [profile?.clinic_id]);
+  }, [profile?.clinic_id, userRole, profile?.id]);
 
   useEffect(() => { 
     fetch(); 
@@ -234,7 +244,7 @@ export function useAppointments() {
     const { data, error } = await supabase
       .from('appointments')
       .insert({ ...apt, clinic_id: profile.clinic_id })
-      .select('*, patient:patients(name), doctor:doctors(name)')
+      .select('*, patient:patients(name), doctor:doctors!inner(name, user_id)')
       .single();
     if (error) { setError(error.message); return null; }
     return data;

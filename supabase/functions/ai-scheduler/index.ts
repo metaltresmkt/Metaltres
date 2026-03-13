@@ -137,13 +137,35 @@ serve(async (req) => {
       })
 
     } else if (action === 'book_appointment') {
-      const { doctor_id, date, time, patient_name, patient_phone } = payload.payload || payload
+      const { doctor_id: rawDoctorId, date, time, patient_name, patient_phone } = payload.payload || payload
 
-      if (!doctor_id || !date || !time || !patient_name || !patient_phone) {
+      if (!rawDoctorId || !date || !time || !patient_name || !patient_phone) {
         return new Response(JSON.stringify({ error: 'Missing required fields (doctor_id, date, time, patient_name, patient_phone)' }), {
            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-           status: 400 
+           status: 400
         })
+      }
+
+      // Resolve doctor_id: accept UUID or doctor name as fallback
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+      let doctor_id = rawDoctorId
+      if (!uuidRegex.test(rawDoctorId)) {
+        const { data: matchedDoctor, error: doctorLookupError } = await supabaseClient
+          .from('doctors')
+          .select('id, name')
+          .eq('clinic_id', clinic_id)
+          .ilike('name', `%${rawDoctorId}%`)
+          .eq('is_active', true)
+          .limit(1)
+          .maybeSingle()
+        if (doctorLookupError) throw doctorLookupError
+        if (!matchedDoctor) {
+          return new Response(JSON.stringify({ error: `Médico não encontrado: "${rawDoctorId}"` }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 404,
+          })
+        }
+        doctor_id = matchedDoctor.id
       }
 
       // 1. Resolve Patient

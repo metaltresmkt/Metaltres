@@ -211,15 +211,28 @@ function ChatsView() {
                 <div>
                   <CardTitle className="text-lg font-bold text-slate-900">{selectedLead.name}</CardTitle>
                   <div className="flex items-center gap-2 mt-0.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-sm animate-pulse"></span>
-                    <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">
-                      Atendimento IA Ativo
+                    <span className={cn(
+                      "w-2 h-2 rounded-full shadow-sm",
+                      selectedLead.ai_enabled !== false ? "bg-emerald-500 animate-pulse" : "bg-slate-300"
+                    )}></span>
+                    <span className={cn(
+                      "text-[10px] font-bold uppercase tracking-wider",
+                      selectedLead.ai_enabled !== false ? "text-emerald-600" : "text-slate-500"
+                    )}>
+                      {selectedLead.ai_enabled !== false ? "Atendimento IA Ativo" : "IA Pausada (Atendimento Humano)"}
                     </span>
                   </div>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-bold text-slate-400 uppercase bg-slate-100 px-2 py-1 rounded">Modo Inteligente</span>
+                <span className={cn(
+                  "text-[10px] font-bold uppercase px-2 py-1 rounded",
+                  selectedLead.ai_enabled !== false 
+                    ? "bg-emerald-50 text-emerald-600 border border-emerald-100" 
+                    : "bg-slate-100 text-slate-500"
+                )}>
+                  {selectedLead.ai_enabled !== false ? "Modo Inteligente" : "Modo Manual"}
+                </span>
               </div>
             </CardHeader>
 

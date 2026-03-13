@@ -26,19 +26,19 @@ export function useDoctors() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetch = useCallback(async () => {
+  const fetch = useCallback(async (silent = false) => {
     if (!profile?.clinic_id) return;
-    setLoading(true);
+    if (!silent) setLoading(true);
     const { data, error } = await supabase
       .from('doctors')
       .select('*')
       .eq('clinic_id', profile.clinic_id)
       .order('name');
     
-    if (error) { setError(error.message); setLoading(false); return; }
+    if (error) { setError(error.message); if (!silent) setLoading(false); return; }
     setData(data || []);
     setError(null);
-    setLoading(false);
+    if (!silent) setLoading(false);
   }, [profile?.clinic_id]);
 
   useEffect(() => { 
@@ -53,7 +53,7 @@ export function useDoctors() {
         table: 'doctors',
         filter: `clinic_id=eq.${profile.clinic_id}`
       }, () => {
-        fetch();
+        fetch(true);
       })
       .subscribe();
 
@@ -112,19 +112,19 @@ export function usePatients() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetch = useCallback(async () => {
+  const fetch = useCallback(async (silent = false) => {
     if (!profile?.clinic_id) return;
-    setLoading(true);
+    if (!silent) setLoading(true);
     const { data, error } = await supabase
       .from('patients')
       .select('*')
       .eq('clinic_id', profile.clinic_id)
       .order('name');
     
-    if (error) { setError(error.message); setLoading(false); return; }
+    if (error) { setError(error.message); if (!silent) setLoading(false); return; }
     setData(data || []);
     setError(null);
-    setLoading(false);
+    if (!silent) setLoading(false);
   }, [profile?.clinic_id]);
 
   useEffect(() => { 
@@ -139,7 +139,7 @@ export function usePatients() {
         table: 'patients',
         filter: `clinic_id=eq.${profile.clinic_id}`
       }, () => {
-        fetch();
+        fetch(true);
       })
       .subscribe();
 
@@ -197,9 +197,9 @@ export function useAppointments() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetch = useCallback(async () => {
+  const fetch = useCallback(async (silent = false) => {
     if (!profile?.clinic_id) return;
-    setLoading(true);
+    if (!silent) setLoading(true);
     
     let query = supabase
       .from('appointments')
@@ -214,10 +214,10 @@ export function useAppointments() {
       .order('date', { ascending: false })
       .order('time', { ascending: true });
     
-    if (error) { setError(error.message); setLoading(false); return; }
+    if (error) { setError(error.message); if (!silent) setLoading(false); return; }
     setData(data || []);
     setError(null);
-    setLoading(false);
+    if (!silent) setLoading(false);
   }, [profile?.clinic_id, userRole, profile?.id]);
 
   useEffect(() => { 
@@ -232,7 +232,7 @@ export function useAppointments() {
         table: 'appointments',
         filter: `clinic_id=eq.${profile.clinic_id}`
       }, () => {
-        fetch();
+        fetch(true);
       })
       .subscribe();
 
@@ -406,7 +406,7 @@ export function useLeads() {
         table: 'leads',
         filter: `clinic_id=eq.${profile.clinic_id}`
       }, () => {
-        fetch(true); // Silent fetch on realtime update
+        fetch(true);
       })
       .subscribe();
 
@@ -456,9 +456,9 @@ export function useDashboardStats() {
   });
   const [loading, setLoading] = useState(true);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (silent = false) => {
     if (!profile?.clinic_id) return;
-    setLoading(true);
+    if (!silent) setLoading(true);
     const clinicId = profile!.clinic_id;
 
     const now = new Date();
@@ -485,7 +485,7 @@ export function useDashboardStats() {
       totalMessages: messagesRes.count || 0,
       newPatients: patientsRes.count || 0,
     });
-    setLoading(false);
+    if (!silent) setLoading(false);
   }, [profile?.clinic_id]);
 
   useEffect(() => {
@@ -495,10 +495,10 @@ export function useDashboardStats() {
     // Sincronizar dashboard com mudanças em tabelas chave
     const channel = supabase
       .channel('dashboard_realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments', filter: `clinic_id=eq.${profile.clinic_id}` }, () => load())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'financial_transactions', filter: `clinic_id=eq.${profile.clinic_id}` }, () => load())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'patients', filter: `clinic_id=eq.${profile.clinic_id}` }, () => load())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_messages', filter: `clinic_id=eq.${profile.clinic_id}` }, () => load())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments', filter: `clinic_id=eq.${profile.clinic_id}` }, () => load(true))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'financial_transactions', filter: `clinic_id=eq.${profile.clinic_id}` }, () => load(true))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'patients', filter: `clinic_id=eq.${profile.clinic_id}` }, () => load(true))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_messages', filter: `clinic_id=eq.${profile.clinic_id}` }, () => load(true))
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
@@ -531,19 +531,19 @@ export function useFinancial() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetch = useCallback(async () => {
+  const fetch = useCallback(async (silent = false) => {
     if (!profile?.clinic_id) return;
-    setLoading(true);
+    if (!silent) setLoading(true);
     const { data, error } = await supabase
       .from('financial_transactions')
       .select('*')
       .eq('clinic_id', profile.clinic_id)
       .order('date', { ascending: false });
     
-    if (error) { setError(error.message); setLoading(false); return; }
+    if (error) { setError(error.message); if (!silent) setLoading(false); return; }
     setData(data || []);
     setError(null);
-    setLoading(false);
+    if (!silent) setLoading(false);
   }, [profile?.clinic_id]);
 
   useEffect(() => { 
@@ -558,7 +558,7 @@ export function useFinancial() {
         table: 'financial_transactions',
         filter: `clinic_id=eq.${profile.clinic_id}`
       }, () => {
-        fetch();
+        fetch(true);
       })
       .subscribe();
 
@@ -616,19 +616,19 @@ export function useMedicalRecords(patientId: string | null) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetch = useCallback(async () => {
+  const fetch = useCallback(async (silent = false) => {
     if (!patientId) { setData([]); setLoading(false); return; }
-    setLoading(true);
+    if (!silent) setLoading(true);
     const { data, error } = await supabase
       .from('medical_records')
       .select('*, doctor:doctors(name)')
       .eq('patient_id', patientId)
       .order('created_at', { ascending: false });
     
-    if (error) { setError(error.message); setLoading(false); return; }
+    if (error) { setError(error.message); if (!silent) setLoading(false); return; }
     setData(data || []);
     setError(null);
-    setLoading(false);
+    if (!silent) setLoading(false);
   }, [patientId]);
 
   useEffect(() => { 
@@ -643,7 +643,7 @@ export function useMedicalRecords(patientId: string | null) {
         table: 'medical_records',
         filter: `patient_id=eq.${patientId}`
       }, () => {
-        fetch();
+        fetch(true);
       })
       .subscribe();
 

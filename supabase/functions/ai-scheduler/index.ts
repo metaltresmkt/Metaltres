@@ -222,7 +222,9 @@ serve(async (req) => {
           .in('id', leads.map(l => l.id))
       }
 
-      return new Response(JSON.stringify({ success: true, appointment: newAppointment }), {
+      const readable_summary = `Agendamento realizado com sucesso para ${patient_name} no dia ${date} às ${time}.`
+
+      return new Response(JSON.stringify({ success: true, appointment: newAppointment, readable_summary }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
       })

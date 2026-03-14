@@ -23,7 +23,6 @@ import {
   X,
   BellRing,
   UserCheck,
-  Hash,
   Search,
   Plus,
   Trash2,
@@ -486,10 +485,8 @@ function FollowupsView() {
 interface HandoffRule {
   id: string;
   name: string;
-  type: 'keyword' | 'ai_phrase' | 'satisfaction';
+  type: 'keyword';
   keywords?: string;
-  phrase?: string;
-  threshold?: number;
   move_to_stage?: string;
   action?: string;
   farewell_enabled?: boolean;
@@ -503,137 +500,39 @@ const HANDOFF_ACTIONS = [
   { value: 'transfer', label: 'Transferir Atendimento' },
 ];
 
-const TRIGGER_TYPE_LABELS: Record<HandoffRule['type'], string> = {
-  keyword: 'Palavra do Lead',
-  ai_phrase: 'Frase da IA',
-  satisfaction: 'Satisfação',
-};
-
 const RuleCard: React.FC<{
   rule: HandoffRule;
-  isOpen: boolean;
-  onToggle: () => void;
   funnelStages: FunnelStage[];
   onUpdate: (updates: Partial<HandoffRule>) => void;
   onRemove: () => void;
-}> = ({ rule, isOpen, onToggle, funnelStages, onUpdate, onRemove }) => {
-  const triggerTypes = [
-    { id: 'keyword' as const, label: 'Palavra do Lead', desc: 'Lead diz algo parecido', icon: Hash },
-    { id: 'ai_phrase' as const, label: 'Frase da IA', desc: 'IA fala determinada frase', icon: Bot },
-    { id: 'satisfaction' as const, label: 'Satisfação', desc: 'Score abaixo de X', icon: Activity },
-  ];
-
+}> = ({ rule, funnelStages, onUpdate, onRemove }) => {
   return (
-    <Card className={cn("border shadow-sm overflow-hidden transition-all", isOpen ? "border-teal-300" : "border-slate-200")}>
-      {/* Header — sempre visível, clicável */}
-      <button
-        onClick={onToggle}
-        className="w-full flex items-center justify-between px-5 py-4 bg-slate-50 hover:bg-slate-100 transition-colors text-left"
-      >
-        <div className="flex items-center gap-3 min-w-0">
-          <span className={cn(
-            "text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0",
-            "bg-teal-100 text-teal-700"
-          )}>
-            {TRIGGER_TYPE_LABELS[rule.type]}
-          </span>
-          <span className="text-sm font-semibold text-slate-700 truncate">
-            {rule.name || <span className="text-slate-400 italic">Sem nome</span>}
-          </span>
-        </div>
-        <div className="flex items-center gap-2 shrink-0 ml-3">
-          <button
-            onClick={e => { e.stopPropagation(); onRemove(); }}
-            className="text-slate-300 hover:text-red-500 transition-colors p-1"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
-          <span className={cn("transition-transform duration-200 text-slate-400", isOpen && "rotate-180")}>
-            ▾
-          </span>
-        </div>
-      </button>
+    <Card className="border border-slate-200 shadow-sm overflow-hidden">
+      <div className="flex items-center justify-between px-5 py-3 bg-slate-50 border-b border-slate-200">
+        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-100 text-teal-700">
+          Palavra do Lead
+        </span>
+        <button
+          onClick={onRemove}
+          className="text-slate-300 hover:text-red-500 transition-colors p-1"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
+      </div>
 
-      {/* Conteúdo expandido */}
-      {isOpen && (
-        <CardContent className="p-5 space-y-5 border-t border-slate-200">
-          {/* Nome */}
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Nome do Gatilho</label>
-            <input
-              type="text"
-              value={rule.name}
-              onChange={e => onUpdate({ name: e.target.value })}
-              placeholder="Ex: Pedido de Atendimento Humano"
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-100 focus:border-teal-500 transition-all"
-            />
-          </div>
-
-          {/* Type selector */}
-          <div className="grid grid-cols-3 gap-3">
-            {triggerTypes.map(({ id, label, desc, icon: Icon }) => (
-              <button
-                key={id}
-                onClick={() => onUpdate({ type: id })}
-                className={cn(
-                  "p-3 rounded-xl border-2 text-left transition-all",
-                  rule.type === id
-                    ? "border-teal-500 bg-teal-50"
-                    : "border-slate-200 bg-white hover:border-slate-300"
-                )}
-              >
-                <Icon className={cn("w-4 h-4 mb-1", rule.type === id ? "text-teal-600" : "text-slate-400")} />
-                <p className={cn("text-xs font-bold", rule.type === id ? "text-teal-800" : "text-slate-700")}>{label}</p>
-                <p className="text-[10px] text-slate-400 mt-0.5">{desc}</p>
-              </button>
-            ))}
-          </div>
-
-          {/* Type-specific + stage row */}
+      <CardContent className="p-5 space-y-5">
+          {/* Keywords + stage row */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1">
-              {rule.type === 'keyword' && (
-                <>
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Palavras-chave (separadas por vírgula)</label>
-                  <input
-                    type="text"
-                    value={rule.keywords || ''}
-                    onChange={e => onUpdate({ keywords: e.target.value })}
-                    placeholder="preço, valor, orçamento, quanto custa"
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-100 focus:border-teal-500 transition-all"
-                  />
-                  <p className="text-[10px] text-slate-400">Quando o lead mencionar estas palavras</p>
-                </>
-              )}
-              {rule.type === 'ai_phrase' && (
-                <>
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Frase que a IA deve dizer</label>
-                  <input
-                    type="text"
-                    value={rule.phrase || ''}
-                    onChange={e => onUpdate({ phrase: e.target.value })}
-                    placeholder="Vou transferir você para um atendente"
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-100 focus:border-teal-500 transition-all"
-                  />
-                  <p className="text-[10px] text-slate-400">A IA precisa falar exatamente esta frase para disparar</p>
-                </>
-              )}
-              {rule.type === 'satisfaction' && (
-                <>
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Limite de Satisfação (0-10)</label>
-                  <div className="flex items-center gap-3 pt-1">
-                    <input
-                      type="range"
-                      min={0} max={10} step={1}
-                      value={rule.threshold ?? 3}
-                      onChange={e => onUpdate({ threshold: parseInt(e.target.value) })}
-                      className="flex-1 accent-teal-600"
-                    />
-                    <span className="text-sm font-bold text-teal-700 w-5 text-center">{rule.threshold ?? 3}</span>
-                  </div>
-                  <p className="text-[10px] text-slate-400">Dispara quando satisfação do lead fica abaixo deste valor</p>
-                </>
-              )}
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Palavras-chave (separadas por vírgula)</label>
+              <input
+                type="text"
+                value={rule.keywords || ''}
+                onChange={e => onUpdate({ keywords: e.target.value })}
+                placeholder="preço, valor, orçamento, quanto custa"
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-100 focus:border-teal-500 transition-all"
+              />
+              <p className="text-[10px] text-slate-400">Quando o lead mencionar estas palavras</p>
             </div>
             <div className="space-y-1">
               <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Mover para Etapa</label>
@@ -705,7 +604,6 @@ const RuleCard: React.FC<{
             <p className="text-[10px] text-slate-400">Variáveis: {'{lead_name}'}, {'{lead_phone}'}, {'{trigger_keyword}'}</p>
           </div>
         </CardContent>
-      )}
     </Card>
   );
 }
@@ -716,7 +614,6 @@ function HandoffView() {
   const [saving, setSaving] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [rules, setRules] = useState<HandoffRule[]>([]);
-  const [openId, setOpenId] = useState<string | null>(null);
 
   useEffect(() => {
     if (aiConfig) {
@@ -757,12 +654,10 @@ function HandoffView() {
       notification_message: '🚨 Novo lead qualificado! Cliente solicitou atendimento humano.',
     };
     setRules(prev => [...prev, newRule]);
-    setOpenId(id);
   };
 
   const removeRule = (id: string) => {
     setRules(prev => prev.filter(r => r.id !== id));
-    if (openId === id) setOpenId(null);
     setIsDirty(true);
   };
 
@@ -799,10 +694,12 @@ function HandoffView() {
               )} />
             </button>
           </div>
-          <Button onClick={addRule} className="bg-amber-500 hover:bg-amber-600 text-white gap-2">
-            <Plus className="w-4 h-4" />
-            Adicionar Gatilho
-          </Button>
+          {rules.length === 0 && (
+            <Button onClick={addRule} className="bg-amber-500 hover:bg-amber-600 text-white gap-2">
+              <Plus className="w-4 h-4" />
+              Adicionar Gatilho
+            </Button>
+          )}
         </div>
       </div>
 
@@ -818,8 +715,6 @@ function HandoffView() {
             <RuleCard
               key={rule.id}
               rule={rule}
-              isOpen={openId === rule.id}
-              onToggle={() => setOpenId(openId === rule.id ? null : rule.id)}
               funnelStages={funnelStages}
               onUpdate={(updates) => updateRule(rule.id, updates)}
               onRemove={() => removeRule(rule.id)}

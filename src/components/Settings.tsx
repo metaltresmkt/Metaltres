@@ -477,7 +477,6 @@ function IntegrationSettings({ data, onChange, onConnect, onCancel, connecting }
     onCancel: () => void,
     connecting: boolean
 }) {
-    const [simulating, setSimulating] = useState(false);
     const { clinic, refetch } = useSettings();
     const [groupName, setGroupName] = useState('Informativos do Agente IA');
     const [participants, setParticipants] = useState<{ name: string; phone: string }[]>([{ name: '', phone: '' }]);
@@ -515,7 +514,6 @@ function IntegrationSettings({ data, onChange, onConnect, onCancel, connecting }
         }
     };
     const handleCreateGroup = () => invokeGroup('create_group');
-    const handleAddParticipants = () => invokeGroup('add_participants');
 
     return (
         <div className="max-w-4xl mx-auto space-y-6">

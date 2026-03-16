@@ -710,8 +710,6 @@ export interface AIConfig {
   followup_message: string;
   followup_delay: number;
   handoff_enabled: boolean;
-  handoff_triggers: string[];
-  handoff_message: string;
   sla_minutes: number;
   business_hours: { start: string; end: string; days: number[] };
   default_ticket_value: number;

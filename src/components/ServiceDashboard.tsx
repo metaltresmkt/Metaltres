@@ -108,7 +108,7 @@ export function ServiceDashboard() {
           <CardHeader className="bg-slate-50 border-b border-slate-100 py-3">
             <CardTitle className="text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
               <BarChart3 className="w-4 h-4 text-teal-600" />
-              Volume de Atendimentos (Últimos 7 dias)
+              Volume de Conversas (Últimos 7 dias)
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6">

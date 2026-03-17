@@ -354,7 +354,7 @@ function FollowupsView() {
         <CardHeader className="pb-4">
           <CardTitle className="text-xl font-bold text-slate-900 flex items-center gap-3">
             <BellRing className="w-6 h-6 text-teal-600" />
-            Régua de Acompanhamento
+            Régua de Follow-up
           </CardTitle>
           <CardDescription className="text-slate-500 font-medium">
             Reengaje pacientes que pararam de responder sem agendar.
@@ -806,11 +806,11 @@ export function AISecretary() {
         </div>
         <div className="flex bg-slate-50 p-1.5 rounded-2xl border border-slate-200 overflow-x-auto scrollbar-hide gap-1 w-full min-w-0">
           {[
-            { id: "chats", label: "Atendimentos" },
+            { id: "chats", label: "Conversas" },
             { id: "leads", label: "Funil de Leads" },
             { id: "dashboard", label: "Dashboard" },
             { id: "confirmations", label: "Confirmações" },
-            { id: "followups", label: "Acompanhamento" },
+            { id: "followups", label: "Follow-up" },
             { id: "handoff", label: "Transbordo" },
             { id: "config", label: "Configurações" }
           ].map((tab) => (
@@ -909,7 +909,7 @@ function ChatsView() {
         <CardHeader className="bg-slate-50/50 pb-6 border-b border-slate-100">
           <CardTitle className="text-lg font-bold text-slate-900 flex items-center gap-2">
             <MessageSquare className="w-5 h-5 text-teal-600" />
-            Atendimentos
+            Conversas
           </CardTitle>
           <div className="relative mt-4">
             <input

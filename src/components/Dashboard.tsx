@@ -43,7 +43,7 @@ export function Dashboard() {
             Painel <span className="text-teal-600">Administrativo</span>
           </h2>
           <p className="text-slate-500 font-medium text-base">
-            Visão geral do desempenho clínico e atendimentos.
+            Visão geral do desempenho clínico e conversas.
           </p>
         </motion.div>
         <div className="hidden md:flex items-center gap-2 bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm text-slate-600 font-semibold text-sm">
@@ -56,7 +56,7 @@ export function Dashboard() {
         {[
           { title: "Agendamentos", value: stats.totalAppointments.toString(), trend: "Este mês", icon: CalendarCheck, color: "bg-teal-50 text-teal-600" },
           { title: "Faturamento", value: `R$ ${stats.totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`, trend: "Este mês", icon: TrendingUp, color: "bg-emerald-50 text-emerald-600" },
-          { title: "Atendimentos Digitais", value: stats.totalMessages.toString(), trend: "Conversas", icon: MessageSquare, color: "bg-slate-50 text-slate-600" },
+          { title: "Conversas Digitais", value: stats.totalMessages.toString(), trend: "Conversas", icon: MessageSquare, color: "bg-slate-50 text-slate-600" },
           { title: "Novos Pacientes", value: `+${stats.newPatients}`, trend: "Este mês", icon: Users, color: "bg-teal-50 text-teal-700" },
         ].map((stat, i) => (
           <motion.div key={stat.title} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>

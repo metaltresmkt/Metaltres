@@ -232,6 +232,9 @@ export function LeadKanban() {
                   const aguardando = !isPerdido && !!lead.last_outbound_at && (
                     !lead.last_message_at || parseISO(lead.last_outbound_at) > parseISO(lead.last_message_at)
                   );
+                  const precisaResponder = !isPerdido && !!lead.last_message_at && (
+                    !lead.last_outbound_at || parseISO(lead.last_message_at) > parseISO(lead.last_outbound_at)
+                  );
                   return (
                   <motion.div
                     key={lead.id}
@@ -273,11 +276,16 @@ export function LeadKanban() {
                     )}
 
                     {/* Badges de status */}
-                    {(aguardando || slaBreach > 0) && (
+                    {(aguardando || precisaResponder || slaBreach > 0) && (
                       <div className="flex items-center gap-1.5 mt-2">
                         {aguardando && (
                           <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border bg-blue-50 border-blue-200 text-blue-600">
                             Aguardando Lead
+                          </span>
+                        )}
+                        {precisaResponder && (
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border bg-amber-50 border-amber-200 text-amber-600">
+                            Responder Lead
                           </span>
                         )}
                         {slaBreach > 0 && (

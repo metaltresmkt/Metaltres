@@ -33,7 +33,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { LeadKanban } from "./LeadKanban";
 import { ServiceDashboard } from "./ServiceDashboard";
 import { useLeads, useChatMessages, useSettings, useFunnelStages, FunnelStage } from "../hooks/useSupabase";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 function ValidationModal({ isOpen, onClose, missingTags }: { isOpen: boolean, onClose: () => void, missingTags: string[] }) {
@@ -951,9 +951,31 @@ function ChatsView() {
                         {format(new Date(lead.created_at), 'HH:mm')}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-500 truncate">
+                    <p className="text-xs text-slate-500 truncate mb-1">
                       {lead.phone || 'Sem telefone'}
                     </p>
+                    <div className="flex gap-1">
+                      {(() => {
+                        const isAguardando = !!lead.last_outbound_at && (
+                          !lead.last_message_at || parseISO(lead.last_outbound_at) > parseISO(lead.last_message_at)
+                        );
+                        const isPrecisaResponder = !!lead.last_message_at && (
+                          !lead.last_outbound_at || parseISO(lead.last_message_at) > parseISO(lead.last_outbound_at)
+                        );
+
+                        if (isAguardando) return (
+                          <span className="text-[8px] font-bold px-1 py-0.5 rounded bg-blue-50 text-blue-600 border border-blue-100 uppercase">
+                            Aguardando Lead
+                          </span>
+                        );
+                        if (isPrecisaResponder) return (
+                          <span className="text-[8px] font-bold px-1 py-0.5 rounded bg-amber-50 text-amber-600 border border-amber-100 uppercase">
+                            Responder Lead
+                          </span>
+                        );
+                        return null;
+                      })()}
+                    </div>
                   </div>
                 </div>
               </motion.div>

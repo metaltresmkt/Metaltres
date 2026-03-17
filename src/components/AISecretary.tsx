@@ -804,7 +804,7 @@ export function AISecretary() {
             </div>
           )}
         </div>
-        <div className="flex bg-slate-50 p-1.5 rounded-2xl border border-slate-200 overflow-x-auto scrollbar-hide gap-1 w-full">
+        <div className="flex bg-slate-50 p-1.5 rounded-2xl border border-slate-200 overflow-x-auto scrollbar-hide gap-1 w-full min-w-0">
           {[
             { id: "chats", label: "Atendimentos" },
             { id: "leads", label: "Funil de Leads" },
@@ -818,7 +818,7 @@ export function AISecretary() {
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
               className={cn(
-                "px-4 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all whitespace-nowrap",
+                "flex-1 px-3 py-2.5 text-xs sm:text-sm font-bold rounded-xl transition-all whitespace-nowrap text-center",
                 activeTab === tab.id
                   ? "bg-white text-teal-700 shadow-md ring-1 ring-slate-200"
                   : "text-slate-600 hover:text-slate-900 hover:bg-white/50",

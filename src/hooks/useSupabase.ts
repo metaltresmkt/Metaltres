@@ -994,8 +994,8 @@ export function useChatMessages(leadId?: string) {
 
       if (existingLead) {
         insertData.lead_id = existingLead.id;
-      } else {
-        // 2. Create new lead if not found
+      } else if (leadPhone !== clinicPhone) {
+        // 2. Create new lead if not found and NOT the clinic phone
         const { data: newLead, error: leadError } = await supabase
           .from('leads')
           .insert({

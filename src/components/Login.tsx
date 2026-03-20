@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { motion } from 'framer-motion';
-import { Stethoscope, Mail, Lock, Loader2, AlertCircle } from 'lucide-react';
+import { ShieldCheck, Mail, Lock, Loader2, AlertCircle } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 export function Login() {
@@ -39,10 +39,10 @@ export function Login() {
       >
         <div className="flex flex-col items-center mb-8">
           <div className="w-16 h-16 rounded-2xl bg-teal-600 flex items-center justify-center text-white shadow-lg shadow-teal-100 mb-4">
-            <Stethoscope className="w-10 h-10" />
+            <ShieldCheck className="w-10 h-10" />
           </div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">ClínicaPro</h1>
-          <p className="text-slate-500 text-sm font-medium">Gestão inteligente para sua clínica</p>
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Metaltres</h1>
+          <p className="text-slate-500 text-sm font-medium">Gestão inteligente de orçamentos e produção</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
@@ -54,7 +54,7 @@ export function Login() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="exemplo@clinica.com"
+                placeholder="exemplo@metaltres.com"
                 className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-100 transition-all font-medium placeholder:text-slate-400"
               />
               <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
@@ -105,7 +105,7 @@ export function Login() {
 
         <div className="mt-8 text-center">
           <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-            Exclusivo para parceiros ClínicaPro
+            Exclusivo para parceiros Metaltres
           </p>
         </div>
       </motion.div>

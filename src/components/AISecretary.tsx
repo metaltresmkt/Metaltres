@@ -63,7 +63,7 @@ function ValidationModal({ isOpen, onClose, missingTags }: { isOpen: boolean, on
               </div>
               <div>
                 <h3 className="text-xl font-bold text-slate-900">Variáveis Faltando</h3>
-                <p className="text-sm text-slate-500 font-medium">O template da mensagem está incompleto.</p>
+                <p className="text-sm text-slate-500 font-medium">O template da mensagem de orçamento está incompleto.</p>
               </div>
               <button 
                 onClick={onClose}
@@ -117,7 +117,7 @@ function ConfirmationsView() {
       // Initialize with defaults if config doesn't exist yet
       setLocalConfig({
         confirm_enabled: false,
-        confirm_message: "Olá {paciente}, passando para confirmar sua consulta no dia {data} às {hora}. Podemos confirmar?",
+        confirm_message: "Olá {cliente}, seu orçamento da Metaltres está pronto! Podemos agendar a instalação para o dia {data}?",
         confirm_lead_time: 1440,
         response_style: 'cordial',
         response_speed: 'instantanea',
@@ -135,7 +135,7 @@ function ConfirmationsView() {
   }
 
   const handleSave = async () => {
-    const requiredTags = ['{paciente}', '{data}', '{hora}'];
+    const requiredTags = ['{cliente}', '{data}'];
     const missing = requiredTags.filter(tag => !localConfig.confirm_message.toLowerCase().includes(tag));
 
     if (missing.length > 0) {
@@ -162,10 +162,10 @@ function ConfirmationsView() {
         <CardHeader className="pb-4">
           <CardTitle className="text-xl font-bold text-slate-900 flex items-center gap-3">
             <ShieldCheck className="w-6 h-6 text-teal-600" />
-            Automação de Confirmação
+            Confirmação de Vendas
           </CardTitle>
           <CardDescription className="text-slate-500 font-medium">
-            Envie mensagens automáticas para evitar faltas e otimizar sua agenda.
+            Envie mensagens automáticas para confirmar orçamentos e pedidos.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -207,8 +207,8 @@ function ConfirmationsView() {
               />
               <div className="flex-1 text-[10px] font-bold text-slate-400 uppercase leading-tight">
                 {localConfig.confirm_lead_time >= 60 
-                  ? `${Math.floor(localConfig.confirm_lead_time / 60)}h ${localConfig.confirm_lead_time % 60}min antes da consulta`
-                  : `${localConfig.confirm_lead_time} minutos antes da consulta`
+                  ? `${Math.floor(localConfig.confirm_lead_time / 60)}h ${localConfig.confirm_lead_time % 60}min antes da entrega/instalação`
+                  : `${localConfig.confirm_lead_time} minutos antes da entrega/instalação`
                 }
               </div>
             </div>
@@ -241,10 +241,10 @@ function ConfirmationsView() {
               value={localConfig.confirm_message || ""}
               onChange={(e) => setConfig({ confirm_message: e.target.value })}
               className="w-full p-4 border border-slate-200 rounded-lg font-medium focus:ring-2 focus:ring-teal-100 focus:border-teal-600 outline-none transition-all resize-none text-sm leading-relaxed"
-              placeholder="Use {paciente}, {data} e {hora} para personalizar..."
+              placeholder="Use {cliente} e {data} para personalizar..."
             />
             <p className="text-[10px] text-slate-400 font-medium italic pl-1">
-              Variáveis obrigatórias: {"{paciente}"}, {"{data}"} e {"{hora}"}.
+              Variáveis obrigatórias: {"{cliente}"} e {"{data}"}.
             </p>
           </div>
 
@@ -273,9 +273,8 @@ function ConfirmationsView() {
                  <div className="bg-white/10 w-2/3 h-8 rounded-lg animate-pulse" />
                  <div className="bg-teal-600 text-white p-4 rounded-2xl rounded-tr-none text-sm font-medium shadow-lg">
                     {localConfig.confirm_message
-                      .replace('{paciente}', 'João Silva')
-                      .replace('{data}', '15/05')
-                      .replace('{hora}', '14:30')}
+                      .replace('{cliente}', 'João Silva')
+                      .replace('{data}', '15/05')}
                  </div>
                  <div className="bg-white/5 w-1/2 h-4 rounded-full ml-auto" />
                </div>
@@ -290,7 +289,7 @@ function ConfirmationsView() {
                <h4 className="font-bold text-sm">Como funciona?</h4>
              </div>
              <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                O sistema monitora seus agendamentos e dispara a mensagem configurada automaticamente no tempo de antecedência escolhido.
+                O sistema monitora seus orçamentos e dispara a mensagem configurada automaticamente no tempo de antecedência escolhido para confirmação.
              </p>
              <ul className="space-y-2">
                 {[
@@ -326,7 +325,7 @@ function FollowupsView() {
     } else if (!loading) {
       setLocalConfig({
         followup_enabled: false,
-        followup_message: "Olá {paciente}, percebi que ainda não finalizamos seu agendamento. Gostaria de continuar de onde paramos?",
+        followup_message: "Olá {cliente}, percebi que ainda não finalizamos seu orçamento da Metaltres. Gostaria de continuar de onde paramos?",
         followup_delay: 1440,
       });
     }
@@ -354,10 +353,10 @@ function FollowupsView() {
         <CardHeader className="pb-4">
           <CardTitle className="text-xl font-bold text-slate-900 flex items-center gap-3">
             <BellRing className="w-6 h-6 text-teal-600" />
-            Régua de Follow-up
+            Recuperação de Vendas (Follow-up)
           </CardTitle>
           <CardDescription className="text-slate-500 font-medium">
-            Reengaje pacientes que pararam de responder sem agendar.
+            Reengaje clientes que pararam de responder sem fechar o pedido.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -432,7 +431,7 @@ function FollowupsView() {
               value={localConfig.followup_message || ""}
               onChange={(e) => setConfig({ followup_message: e.target.value })}
               className="w-full p-4 border border-slate-200 rounded-lg font-medium focus:ring-2 focus:ring-teal-100 focus:border-teal-600 outline-none transition-all resize-none text-sm leading-relaxed"
-              placeholder="Olá {paciente}, notamos que..."
+              placeholder="Olá {cliente}, notamos que..."
             />
           </div>
 
@@ -454,7 +453,7 @@ function FollowupsView() {
               Como funciona o Follow-up?
             </h4>
             <p className="text-xs text-teal-700 leading-relaxed font-medium">
-              Se um lead parar de responder durante uma conversa e não houver um agendamento marcado, a IA enviará esta mensagem automaticamente após o período definido. Isso ajuda a recuperar até 30% dos leads perdidos por esquecimento.
+              Se um lead parar de responder durante uma conversa e não houver um orçamento/pedido fechado, a IA enviará esta mensagem automaticamente após o período definido. Isso ajuda a recuperar até 30% das vendas perdidas por esquecimento.
             </p>
           </div>
           <BellRing className="absolute -right-4 -bottom-4 w-24 h-24 text-teal-200/50 rotate-12" />
@@ -469,9 +468,9 @@ function FollowupsView() {
           </CardHeader>
           <CardContent className="pt-2">
             <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 max-w-[85%] relative">
-               <p className="text-sm text-slate-700 leading-relaxed font-medium">
-                 {localConfig.followup_message ? localConfig.followup_message.replace(/{paciente}/g, "João") : ""}
-               </p>
+                <p className="text-sm text-slate-700 leading-relaxed font-medium">
+                  {localConfig.followup_message ? localConfig.followup_message.replace(/{cliente}/g, "João") : ""}
+                </p>
                <span className="text-[9px] text-slate-400 font-bold uppercase mt-2 block">10:45</span>
                <div className="absolute -left-2 top-4 w-4 h-4 bg-white border-l border-b border-slate-100 rotate-45" />
             </div>
@@ -755,7 +754,7 @@ function HandoffView() {
             <CardContent className="pt-2">
               <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 max-w-[85%] relative">
                 <p className="text-sm text-slate-700 leading-relaxed font-medium">
-                  {rules.find((r: HandoffRule) => r.farewell_enabled && r.farewell_message)?.farewell_message?.replace(/{paciente}/g, 'João') ?? ''}
+                  {rules.find((r: HandoffRule) => r.farewell_enabled && r.farewell_message)?.farewell_message?.replace(/{cliente}/g, 'João') ?? ''}
                 </p>
                 <span className="text-[9px] text-slate-400 font-bold uppercase mt-2 block">10:45</span>
                 <div className="absolute -left-2 top-4 w-4 h-4 bg-white border-l border-b border-slate-100 rotate-45" />
@@ -781,7 +780,7 @@ export function AISecretary() {
               Assistente <span className="text-teal-600">IA</span>
             </h2>
             <p className="text-slate-500 font-medium text-base">
-              Gestão inteligente de agendamentos e pacientes.
+              Gestão inteligente de vendas e produção na Metaltres.
             </p>
           </div>
           {aiConfig && (

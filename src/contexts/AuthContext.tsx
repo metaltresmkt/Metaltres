@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useRef, ReactNod
 import { supabase } from '../lib/supabase';
 import { Session, User } from '@supabase/supabase-js';
 
-export type UserRole = 'gestor' | 'medico' | 'secretaria';
+export type UserRole = 'gestor' | 'vendedor' | 'producao';
 
 interface UserProfile {
   id: string;
@@ -121,6 +121,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (clinicData?.name) {
           setClinicName(clinicData.name);
+        } else {
+          setClinicName('Metaltres');
         }
       } else {
         console.warn('AuthContext: No profile found in users table');
@@ -142,8 +144,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       session,
       profile,
-      clinicName,
-      userRole: profile?.role || 'secretaria',
+      clinicName: clinicName || 'Metaltres',
+      userRole: profile?.role || 'vendedor',
       loading,
       signOut
     }}>

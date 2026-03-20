@@ -145,7 +145,7 @@ export function Finance() {
             Painel <span className="text-teal-600">Financeiro</span>
           </h2>
           <p className="text-slate-500 font-medium text-base">
-            Acompanhe o crescimento e a saúde financeira da clínica.
+            Acompanhe a saúde financeira da Metaltres.
           </p>
         </motion.div>
         <div className="flex items-center gap-3">
@@ -381,13 +381,21 @@ export function Finance() {
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Descrição *</label>
-                  <input type="text" value={formData.description} onChange={e => setFormData(p => ({ ...p, description: e.target.value }))} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-200 font-medium text-sm" placeholder="Ex: Consulta Dr. João ou Material de Limpeza" />
+                  <input type="text" value={formData.description} onChange={e => setFormData(p => ({ ...p, description: e.target.value }))} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-200 font-medium text-sm" placeholder="Ex: Venda de Tela, Compra de Perfil, etc" />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Categoria</label>
-                    <input type="text" value={formData.category} onChange={e => setFormData(p => ({ ...p, category: e.target.value }))} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-200 font-medium text-sm" placeholder="Ex: Saúde, Aluguel" />
+                    <select value={formData.category} onChange={e => setFormData(p => ({ ...p, category: e.target.value }))} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-200 font-medium text-sm">
+                      <option value="Venda">Venda</option>
+                      <option value="Material">Material</option>
+                      <option value="Serviço/Instalação">Serviço/Instalação</option>
+                      <option value="Sueldos">Sueldos</option>
+                      <option value="Impostos">Impostos</option>
+                      <option value="Marketing">Marketing</option>
+                      <option value="Outros">Outros</option>
+                    </select>
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Método</label>
@@ -395,7 +403,7 @@ export function Finance() {
                       <option value="pix">PIX</option>
                       <option value="cartao">Cartão</option>
                       <option value="dinheiro">Dinheiro</option>
-                      <option value="plano">Plano de Saúde</option>
+                      <option value="transferencia">Transferência</option>
                     </select>
                   </div>
                 </div>

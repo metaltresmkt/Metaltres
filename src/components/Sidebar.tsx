@@ -3,14 +3,14 @@ import {
   LayoutDashboard,
   Bot,
   CircleDollarSign,
-  CalendarDays,
   ClipboardList,
   Users,
   Settings,
-  Stethoscope,
-  Activity,
   ShieldCheck,
   LogOut,
+  Hammer,
+  FileText,
+  LayoutGrid,
 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { motion } from "framer-motion";
@@ -28,11 +28,11 @@ export function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
   const { clinicName, userRole, signOut, profile } = useAuth();
   
   const allNavItems = [
-    { id: "dashboard", label: "Visão Geral", icon: LayoutDashboard, color: "text-emerald-600", roles: ['gestor', 'medico', 'secretaria'] },
-    { id: "ai-secretary", label: "Assistente IA", icon: Bot, color: "text-teal-600", roles: ['gestor', 'secretaria'] },
-    { id: "appointments", label: "Agendamentos", icon: CalendarDays, color: "text-teal-700", roles: ['gestor', 'medico', 'secretaria'] },
-    { id: "medical-records", label: "Prontuários", icon: ClipboardList, color: "text-slate-700", roles: ['gestor', 'medico', 'secretaria'] },
-    { id: "doctors", label: "Corpo Clínico", icon: Users, color: "text-emerald-800", roles: ['gestor'] },
+    { id: "dashboard", label: "Visão Geral", icon: LayoutDashboard, color: "text-emerald-600", roles: ['gestor', 'vendedor', 'producao'] },
+    { id: "ai-secretary", label: "Assistente IA", icon: Bot, color: "text-teal-600", roles: ['gestor', 'vendedor'] },
+    { id: "quotes", label: "Orçamentos", icon: FileText, color: "text-teal-700", roles: ['gestor', 'vendedor'] },
+    { id: "production", label: "Produção", icon: Hammer, color: "text-slate-700", roles: ['gestor', 'producao'] },
+    { id: "customers", label: "Clientes", icon: Users, color: "text-emerald-800", roles: ['gestor', 'vendedor'] },
     { id: "finance", label: "Financeiro", icon: CircleDollarSign, color: "text-emerald-700", roles: ['gestor'] },
     { id: "settings", label: "Configurações", icon: Settings, color: "text-slate-500", roles: ['gestor'] },
   ];
@@ -44,11 +44,13 @@ export function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
       <div className="p-8 pb-4">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-xl bg-teal-600 flex items-center justify-center text-white shadow-lg shadow-teal-100">
-            <Stethoscope className="w-7 h-7" />
+            <LayoutGrid className="w-7 h-7" />
           </div>
           <div className="flex flex-col">
-            <span className="text-xl font-black text-slate-900 tracking-tight">{clinicName.split(' ')[0]}</span>
-            <span className="text-[10px] font-bold text-teal-600 uppercase tracking-widest -mt-1">{clinicName.split(' ')[1] || 'Clínica'}</span>
+            <span className="text-xl font-black text-slate-900 tracking-tight">
+              {clinicName.toLowerCase().includes('clinica') ? 'Metaltres' : clinicName.split(' ')[0]}
+            </span>
+            <span className="text-[10px] font-bold text-teal-600 uppercase tracking-widest -mt-1">Metal & Vidro</span>
           </div>
         </div>
       </div>
@@ -87,7 +89,7 @@ export function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="w-8 h-8 rounded-lg bg-teal-800 flex items-center justify-center text-white font-bold text-xs shrink-0">
-                {profile?.full_name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || (userRole === 'medico' ? 'DR' : 'AD')}
+                {profile?.full_name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || (userRole === 'gestor' ? 'GS' : 'US')}
               </div>
               <div className="flex flex-col min-w-0">
                 <span className="text-xs font-bold text-slate-900 truncate">

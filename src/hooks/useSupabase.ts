@@ -3,34 +3,31 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
 // ==========================================
-// DOCTORS
+// SELLERS (Vendedores)
 // ==========================================
-export interface Doctor {
+export interface Seller {
   id: string;
   clinic_id: string;
   user_id: string | null;
   name: string;
-  specialty: string | null;
-  crm: string | null;
-  status: 'atendendo' | 'pausa' | 'offline';
   is_active: boolean;
   created_at: string;
-  working_hours?: any;
-  consultation_duration?: number;
-  days_off?: string[];
 }
 
-export function useDoctors() {
+export function useSellers() {
   const { profile } = useAuth();
-  const [data, setData] = useState<Doctor[]>([]);
+  const [data, setData] = useState<Seller[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetch = useCallback(async (silent = false) => {
-    if (!profile?.clinic_id) return;
+    if (!profile?.clinic_id) {
+      if (!silent) setLoading(false);
+      return;
+    }
     if (!silent) setLoading(true);
     const { data, error } = await supabase
-      .from('doctors')
+      .from('sellers')
       .select('*')
       .eq('clinic_id', profile.clinic_id)
       .order('name');
@@ -46,11 +43,11 @@ export function useDoctors() {
     if (!profile?.clinic_id) return;
 
     const channel = supabase
-      .channel('doctors_realtime')
+      .channel('sellers_realtime')
       .on('postgres_changes', { 
         event: '*', 
         schema: 'public', 
-        table: 'doctors',
+        table: 'sellers',
         filter: `clinic_id=eq.${profile.clinic_id}`
       }, () => {
         fetch(true);
@@ -60,25 +57,25 @@ export function useDoctors() {
     return () => { supabase.removeChannel(channel); };
   }, [fetch, profile?.clinic_id]);
 
-  const create = async (doc: Partial<Doctor>) => {
+  const create = async (seller: Partial<Seller>) => {
     if (!profile?.clinic_id) return null;
     const { data, error } = await supabase
-      .from('doctors')
-      .insert({ ...doc, clinic_id: profile.clinic_id })
+      .from('sellers')
+      .insert({ ...seller, clinic_id: profile.clinic_id })
       .select()
       .single();
     if (error) { setError(error.message); return null; }
     return data;
   };
 
-  const update = async (id: string, updates: Partial<Doctor>) => {
-    const { error } = await supabase.from('doctors').update(updates).eq('id', id);
+  const update = async (id: string, updates: Partial<Seller>) => {
+    const { error } = await supabase.from('sellers').update(updates).eq('id', id);
     if (error) { setError(error.message); return false; }
     return true;
   };
 
   const remove = async (id: string) => {
-    const { error } = await supabase.from('doctors').delete().eq('id', id);
+    const { error } = await supabase.from('sellers').delete().eq('id', id);
     if (error) { setError(error.message); return false; }
     return true;
   };
@@ -87,36 +84,35 @@ export function useDoctors() {
 }
 
 // ==========================================
-// PATIENTS
+// CUSTOMERS (Clientes)
 // ==========================================
-export interface Patient {
+export interface Customer {
   id: string;
   clinic_id: string;
   name: string;
   phone: string | null;
   email: string | null;
   cpf: string | null;
-  birth_date: string | null;
-  gender: string | null;
-  weight: string | null;
-  height: string | null;
-  allergies: string[] | null;
+  address: string | null;
   notes: string | null;
   is_active: boolean;
   created_at: string;
 }
 
-export function usePatients() {
+export function useCustomers() {
   const { profile } = useAuth();
-  const [data, setData] = useState<Patient[]>([]);
+  const [data, setData] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetch = useCallback(async (silent = false) => {
-    if (!profile?.clinic_id) return;
+    if (!profile?.clinic_id) {
+      if (!silent) setLoading(false);
+      return;
+    }
     if (!silent) setLoading(true);
     const { data, error } = await supabase
-      .from('patients')
+      .from('customers')
       .select('*')
       .eq('clinic_id', profile.clinic_id)
       .order('name');
@@ -132,11 +128,11 @@ export function usePatients() {
     if (!profile?.clinic_id) return;
 
     const channel = supabase
-      .channel('patients_realtime')
+      .channel('customers_realtime')
       .on('postgres_changes', { 
         event: '*', 
         schema: 'public', 
-        table: 'patients',
+        table: 'customers',
         filter: `clinic_id=eq.${profile.clinic_id}`
       }, () => {
         fetch(true);
@@ -146,25 +142,25 @@ export function usePatients() {
     return () => { supabase.removeChannel(channel); };
   }, [fetch, profile?.clinic_id]);
 
-  const create = async (p: Partial<Patient>) => {
+  const create = async (c: Partial<Customer>) => {
     if (!profile?.clinic_id) return null;
     const { data, error } = await supabase
-      .from('patients')
-      .insert({ ...p, clinic_id: profile.clinic_id })
+      .from('customers')
+      .insert({ ...c, clinic_id: profile.clinic_id })
       .select()
       .single();
     if (error) { setError(error.message); return null; }
     return data;
   };
 
-  const update = async (id: string, updates: Partial<Patient>) => {
-    const { error } = await supabase.from('patients').update(updates).eq('id', id);
+  const update = async (id: string, updates: Partial<Customer>) => {
+    const { error } = await supabase.from('customers').update(updates).eq('id', id);
     if (error) { setError(error.message); return false; }
     return true;
   };
 
   const remove = async (id: string) => {
-    const { error } = await supabase.from('patients').delete().eq('id', id);
+    const { error } = await supabase.from('customers').delete().eq('id', id);
     if (error) { setError(error.message); return false; }
     return true;
   };
@@ -173,46 +169,49 @@ export function usePatients() {
 }
 
 // ==========================================
-// APPOINTMENTS
+// QUOTES (Orçamentos)
 // ==========================================
-export interface Appointment {
+export interface Quote {
   id: string;
   clinic_id: string;
-  patient_id: string;
-  doctor_id: string;
-  date: string;
-  time: string;
-  status: 'pendente' | 'confirmado' | 'realizado' | 'cancelado' | 'faltou';
-  source: 'ia' | 'manual' | 'site' | null;
+  customer_id: string;
+  seller_id: string;
+  status: 'rascunho' | 'enviado' | 'aprovado' | 'rejeitado' | 'cancelado';
+  total_amount: number;
+  valid_until: string | null;
   notes: string | null;
   created_at: string;
   // Joined
-  patient?: { name: string };
-  doctor?: { name: string };
+  customer?: { name: string; phone: string | null };
+  seller?: { name: string };
+  items?: QuoteItem[];
 }
 
-export function useAppointments() {
+export function useQuotes() {
   const { profile, userRole } = useAuth();
-  const [data, setData] = useState<Appointment[]>([]);
+  const [data, setData] = useState<Quote[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetch = useCallback(async (silent = false) => {
-    if (!profile?.clinic_id) return;
+    if (!profile?.clinic_id) {
+      if (!silent) setLoading(false);
+      return;
+    }
     if (!silent) setLoading(true);
     
     let query = supabase
-      .from('appointments')
-      .select('*, patient:patients(name, cpf, phone), doctor:doctors!inner(name, user_id)')
+      .from('quotes')
+      .select('*, customer:customers(name, phone), seller:sellers(name)')
       .eq('clinic_id', profile.clinic_id);
 
-    if (userRole === 'medico') {
-      query = query.eq('doctor.user_id', profile.id);
+    if (userRole === 'vendedor') {
+      // No schema original de médicos, o vendedor via apenas os dele.
+      // Aqui podemos decidir se gestor vê tudo e vendedor vê apenas os dele.
+      query = query.eq('seller_id', profile.id);
     }
 
-    const { data, error } = await query
-      .order('date', { ascending: false })
-      .order('time', { ascending: true });
+    const { data, error } = await query.order('created_at', { ascending: false });
     
     if (error) { setError(error.message); if (!silent) setLoading(false); return; }
     setData(data || []);
@@ -225,11 +224,11 @@ export function useAppointments() {
     if (!profile?.clinic_id) return;
 
     const channel = supabase
-      .channel('appointments_realtime')
+      .channel('quotes_realtime')
       .on('postgres_changes', { 
         event: '*', 
         schema: 'public', 
-        table: 'appointments',
+        table: 'quotes',
         filter: `clinic_id=eq.${profile.clinic_id}`
       }, () => {
         fetch(true);
@@ -239,25 +238,92 @@ export function useAppointments() {
     return () => { supabase.removeChannel(channel); };
   }, [fetch, profile?.clinic_id]);
 
-  const create = async (apt: Partial<Appointment>) => {
+  const create = async (quote: Partial<Quote>) => {
     if (!profile?.clinic_id) return null;
     const { data, error } = await supabase
-      .from('appointments')
-      .insert({ ...apt, clinic_id: profile.clinic_id })
-      .select('*, patient:patients(name, cpf, phone), doctor:doctors!inner(name, user_id)')
+      .from('quotes')
+      .insert({ ...quote, clinic_id: profile.clinic_id })
+      .select('*, customer:customers(name, phone), seller:sellers(name)')
       .single();
     if (error) { setError(error.message); return null; }
     return data;
   };
 
-  const update = async (id: string, updates: Partial<Appointment>) => {
-    const { error } = await supabase.from('appointments').update(updates).eq('id', id);
+  const update = async (id: string, updates: Partial<Quote>) => {
+    const { error } = await supabase.from('quotes').update(updates).eq('id', id);
     if (error) { setError(error.message); return false; }
     return true;
   };
 
   const remove = async (id: string) => {
-    const { error } = await supabase.from('appointments').delete().eq('id', id);
+    const { error } = await supabase.from('quotes').delete().eq('id', id);
+    if (error) { setError(error.message); return false; }
+    return true;
+  };
+
+  return { data, loading, error, refetch: fetch, create, update, remove };
+}
+
+// ==========================================
+// PRODUCTS (Produtos)
+// ==========================================
+export interface Product {
+  id: string;
+  clinic_id: string;
+  name: string;
+  description: string | null;
+  category: string | null;
+  base_price: number;
+  unit_type: 'm2' | 'linear' | 'unidade';
+  is_active: boolean;
+  created_at: string;
+}
+
+export function useProducts() {
+  const { profile } = useAuth();
+  const [data, setData] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetch = useCallback(async (silent = false) => {
+    if (!profile?.clinic_id) {
+      if (!silent) setLoading(false);
+      return;
+    }
+    if (!silent) setLoading(true);
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .eq('clinic_id', profile.clinic_id)
+      .order('name');
+    
+    if (error) { setError(error.message); if (!silent) setLoading(false); return; }
+    setData(data || []);
+    setError(null);
+    if (!silent) setLoading(false);
+  }, [profile?.clinic_id]);
+
+  useEffect(() => { fetch(); }, [fetch]);
+
+  const create = async (p: Partial<Product>) => {
+    if (!profile?.clinic_id) return null;
+    const { data, error } = await supabase
+      .from('products')
+      .insert({ ...p, clinic_id: profile.clinic_id })
+      .select()
+      .single();
+    if (error) { setError(error.message); return null; }
+    return data;
+  };
+
+  const update = async (id: string, updates: Partial<Product>) => {
+    const { error } = await supabase.from('products').update(updates).eq('id', id);
+    if (error) { setError(error.message); return false; }
+    return true;
+  };
+
+  const remove = async (id: string) => {
+    const { error } = await supabase.from('products').delete().eq('id', id);
     if (error) { setError(error.message); return false; }
     return true;
   };
@@ -304,7 +370,10 @@ export function useFunnelStages() {
   const [loading, setLoading] = useState(true);
 
   const fetch = useCallback(async () => {
-    if (!profile?.clinic_id) return;
+    if (!profile?.clinic_id) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     const { data } = await supabase
       .from('funnel_stages')
@@ -384,7 +453,10 @@ export function useLeads() {
   const [error, setError] = useState<string | null>(null);
 
   const fetch = useCallback(async (silent = false) => {
-    if (!profile?.clinic_id) return;
+    if (!profile?.clinic_id) {
+      if (!silent) setLoading(false);
+      return;
+    }
     if (!silent) setLoading(true);
     const { data, error } = await supabase
       .from('leads')
@@ -447,21 +519,24 @@ export function useLeads() {
 // DASHBOARD STATS (Realtime automatic refetch)
 // ==========================================
 export interface DashboardStats {
-  totalAppointments: number;
+  totalQuotes: number;
   totalRevenue: number;
   totalMessages: number;
-  newPatients: number;
+  newCustomers: number;
 }
 
 export function useDashboardStats() {
   const { profile } = useAuth();
   const [data, setData] = useState<DashboardStats>({
-    totalAppointments: 0, totalRevenue: 0, totalMessages: 0, newPatients: 0
+    totalQuotes: 0, totalRevenue: 0, totalMessages: 0, newCustomers: 0
   });
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async (silent = false) => {
-    if (!profile?.clinic_id) return;
+    if (!profile?.clinic_id) {
+      if (!silent) setLoading(false);
+      return;
+    }
     if (!silent) setLoading(true);
     const clinicId = profile!.clinic_id;
 
@@ -469,13 +544,14 @@ export function useDashboardStats() {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
 
-    const [aptsRes, revenueRes, patientsRes, messagesRes] = await Promise.all([
-      supabase.from('appointments').select('id', { count: 'exact', head: true })
-        .eq('clinic_id', clinicId).gte('date', startOfMonth).lte('date', endOfMonth),
+    // Queries adaptadas para Loja de Telas
+    const [quotesRes, revenueRes, customersRes, messagesRes] = await Promise.all([
+      supabase.from('quotes').select('id', { count: 'exact', head: true })
+        .eq('clinic_id', clinicId).gte('created_at', startOfMonth),
       supabase.from('financial_transactions').select('amount')
         .eq('clinic_id', clinicId).eq('type', 'receita').eq('status', 'pago')
         .gte('date', startOfMonth).lte('date', endOfMonth),
-      supabase.from('patients').select('id', { count: 'exact', head: true })
+      supabase.from('customers').select('id', { count: 'exact', head: true })
         .eq('clinic_id', clinicId).gte('created_at', startOfMonth),
       supabase.from('chat_messages').select('id', { count: 'exact', head: true })
         .eq('clinic_id', clinicId).gte('created_at', startOfMonth),
@@ -484,10 +560,10 @@ export function useDashboardStats() {
     const totalRevenue = (revenueRes.data || []).reduce((sum, t) => sum + Number(t.amount || 0), 0);
 
     setData({
-      totalAppointments: aptsRes.count || 0,
+      totalQuotes: quotesRes.count || 0,
       totalRevenue,
       totalMessages: messagesRes.count || 0,
-      newPatients: patientsRes.count || 0,
+      newCustomers: customersRes.count || 0,
     });
     if (!silent) setLoading(false);
   }, [profile?.clinic_id]);
@@ -496,12 +572,11 @@ export function useDashboardStats() {
     load();
     if (!profile?.clinic_id) return;
 
-    // Sincronizar dashboard com mudanças em tabelas chave
     const channel = supabase
       .channel('dashboard_realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments', filter: `clinic_id=eq.${profile.clinic_id}` }, () => load(true))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'quotes', filter: `clinic_id=eq.${profile.clinic_id}` }, () => load(true))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'financial_transactions', filter: `clinic_id=eq.${profile.clinic_id}` }, () => load(true))
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'patients', filter: `clinic_id=eq.${profile.clinic_id}` }, () => load(true))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'customers', filter: `clinic_id=eq.${profile.clinic_id}` }, () => load(true))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_messages', filter: `clinic_id=eq.${profile.clinic_id}` }, () => load(true))
       .subscribe();
 
@@ -517,13 +592,13 @@ export function useDashboardStats() {
 export interface FinancialTransaction {
   id: string;
   clinic_id: string;
-  patient_id: string | null;
-  appointment_id: string | null;
+  customer_id: string | null;
+  quote_id: string | null;
   type: 'receita' | 'despesa';
   category: string | null;
   amount: number;
   description: string | null;
-  payment_method: 'pix' | 'cartao' | 'dinheiro' | 'plano' | null;
+  payment_method: 'pix' | 'cartao' | 'dinheiro' | 'boleto' | null;
   status: 'pago' | 'pendente' | 'cancelado';
   date: string;
   created_at: string;
@@ -536,7 +611,10 @@ export function useFinancial() {
   const [error, setError] = useState<string | null>(null);
 
   const fetch = useCallback(async (silent = false) => {
-    if (!profile?.clinic_id) return;
+    if (!profile?.clinic_id) {
+      if (!silent) setLoading(false);
+      return;
+    }
     if (!silent) setLoading(true);
     const { data, error } = await supabase
       .from('financial_transactions')
@@ -596,88 +674,120 @@ export function useFinancial() {
 }
 
 // ==========================================
-// MEDICAL RECORDS
+// QUOTE ITEMS (Itens do Orçamento)
 // ==========================================
-export interface MedicalRecord {
+export interface QuoteItem {
   id: string;
-  clinic_id: string;
-  patient_id: string;
-  doctor_id: string;
-  appointment_id: string | null;
-  type: 'consulta' | 'retorno' | 'exame' | 'procedimento';
-  description: string | null;
-  diagnosis: string | null;
-  prescription: string | null;
-  attachments: any;
-  created_at: string;
+  quote_id: string;
+  product_id: string;
+  width: number | null;
+  height: number | null;
+  quantity: number;
+  unit_price: number;
+  total_price: number;
+  notes: string | null;
   // Joined
-  doctor?: { name: string };
+  product?: { name: string; unit_type: string };
 }
 
-export function useMedicalRecords(patientId: string | null) {
-  const { profile } = useAuth();
-  const [data, setData] = useState<MedicalRecord[]>([]);
+export function useQuoteItems(quoteId: string | null) {
+  const [data, setData] = useState<QuoteItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  const fetch = useCallback(async (silent = false) => {
-    if (!patientId) { setData([]); setLoading(false); return; }
-    if (!silent) setLoading(true);
-    const { data, error } = await supabase
-      .from('medical_records')
-      .select('*, doctor:doctors(name)')
-      .eq('patient_id', patientId)
-      .order('created_at', { ascending: false });
-    
-    if (error) { setError(error.message); if (!silent) setLoading(false); return; }
+  const fetch = useCallback(async () => {
+    if (!quoteId) { setData([]); setLoading(false); return; }
+    setLoading(true);
+    const { data } = await supabase
+      .from('quote_items')
+      .select('*, product:products(name, unit_type)')
+      .eq('quote_id', quoteId);
     setData(data || []);
-    setError(null);
-    if (!silent) setLoading(false);
-  }, [patientId]);
+    setLoading(false);
+  }, [quoteId]);
 
-  useEffect(() => { 
-    fetch(); 
-    if (!patientId) return;
+  useEffect(() => { fetch(); }, [fetch]);
 
-    const channel = supabase
-      .channel(`records_${patientId}`)
-      .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public', 
-        table: 'medical_records',
-        filter: `patient_id=eq.${patientId}`
-      }, () => {
-        fetch(true);
-      })
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, [fetch, patientId]);
-
-  const create = async (record: Partial<MedicalRecord>) => {
-    if (!profile?.clinic_id) return null;
+  const add = async (item: Partial<QuoteItem>) => {
     const { data, error } = await supabase
-      .from('medical_records')
-      .insert({ ...record, clinic_id: profile.clinic_id })
-      .select('*, doctor:doctors(name)')
+      .from('quote_items')
+      .insert({ ...item, quote_id: quoteId })
+      .select()
       .single();
-    if (error) { setError(error.message); return null; }
+    if (error) return null;
+    fetch();
     return data;
   };
 
-  const update = async (id: string, updates: Partial<MedicalRecord>) => {
-    const { error } = await supabase.from('medical_records').update(updates).eq('id', id);
-    if (error) { setError(error.message); return false; }
-    return true;
-  };
-
   const remove = async (id: string) => {
-    const { error } = await supabase.from('medical_records').delete().eq('id', id);
-    if (error) { setError(error.message); return false; }
+    await supabase.from('quote_items').delete().eq('id', id);
+    fetch();
+  };
+
+  return { data, loading, add, remove };
+}
+
+// ==========================================
+// PRODUCTION ORDERS (Ordem de Produção)
+// ==========================================
+export interface ProductionOrder {
+  id: string;
+  clinic_id: string;
+  quote_id: string | null;
+  status: 'aguardando' | 'corte' | 'montagem' | 'pronto' | 'entregue' | 'pausado';
+  priority: 'baixa' | 'normal' | 'alta' | 'urgente';
+  notes: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  created_at: string;
+  // Joined
+  quote?: {
+    customer: { name: string };
+  };
+}
+
+export function useProductionOrders() {
+  const { profile } = useAuth();
+  const [data, setData] = useState<ProductionOrder[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetch = useCallback(async (silent = false) => {
+    if (!profile?.clinic_id) {
+      if (!silent) setLoading(false);
+      return;
+    }
+    if (!silent) setLoading(true);
+    const { data } = await supabase
+      .from('production_orders')
+      .select('*, quote:quotes(customer:customers(name))')
+      .eq('clinic_id', profile.clinic_id)
+      .order('created_at', { ascending: false });
+    setData(data || []);
+    setLoading(false);
+  }, [profile?.clinic_id]);
+
+  useEffect(() => { 
+    fetch(); 
+    if (!profile?.clinic_id) return;
+
+    const channel = supabase
+      .channel('production_realtime')
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'production_orders',
+        filter: `clinic_id=eq.${profile.clinic_id}`
+      }, () => fetch(true))
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [fetch, profile?.clinic_id]);
+
+  const updateStatus = async (id: string, status: ProductionOrder['status']) => {
+    await supabase.from('production_orders').update({ status }).eq('id', id);
     return true;
   };
 
-  return { data, loading, error, refetch: fetch, create, update, remove };
+  return { data, loading, updateStatus, refetch: fetch };
 }
 
 // ==========================================
@@ -738,7 +848,10 @@ export function useSettings() {
   const [loading, setLoading] = useState(true);
 
   const fetch = useCallback(async (silent = false) => {
-    if (!profile?.clinic_id) return;
+    if (!profile?.clinic_id) {
+      if (!silent) setLoading(false);
+      return;
+    }
     if (!silent) setLoading(true);
 
     const [clinicRes, aiRes, waRes] = await Promise.all([
@@ -903,7 +1016,10 @@ export function useChatMessages(leadId?: string) {
   };
 
   const fetch = useCallback(async () => {
-    if (!profile?.clinic_id) return;
+    if (!profile?.clinic_id) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     let query = supabase
       .from('chat_messages')

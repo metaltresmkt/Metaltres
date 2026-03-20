@@ -3,9 +3,9 @@ import { Sidebar } from './components/Sidebar';
 import { Dashboard } from './components/Dashboard';
 import { AISecretary } from './components/AISecretary';
 import { Finance } from './components/Finance';
-import { Appointments } from './components/Appointments';
-import { MedicalRecords } from './components/MedicalRecords';
-import { DoctorsManagement } from './components/DoctorsManagement';
+import { Quotes } from './components/Quotes';
+import { ProductionOrders } from './components/ProductionOrders';
+import { Customers } from './components/Customers';
 import { Settings } from './components/Settings';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -38,12 +38,12 @@ function AppContent() {
         return <AISecretary />;
       case 'finance':
         return <Finance />;
-      case 'appointments':
-        return <Appointments />;
-      case 'medical-records':
-        return <MedicalRecords />;
-      case 'doctors':
-        return <DoctorsManagement />;
+      case 'quotes':
+        return <Quotes />;
+      case 'production':
+        return <ProductionOrders />;
+      case 'customers':
+        return <Customers />;
       case 'settings':
         return <Settings />;
       default:

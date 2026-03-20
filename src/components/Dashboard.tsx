@@ -18,13 +18,13 @@ export function Dashboard() {
   const { data: stats, loading } = useDashboardStats();
 
   const chartData = [
-    { name: "Seg", agendamentos: 0 },
-    { name: "Ter", agendamentos: 0 },
-    { name: "Qua", agendamentos: 0 },
-    { name: "Qui", agendamentos: 0 },
-    { name: "Sex", agendamentos: 0 },
-    { name: "Sáb", agendamentos: 0 },
-    { name: "Dom", agendamentos: 0 },
+    { name: "Seg", vendas: 0 },
+    { name: "Ter", vendas: 0 },
+    { name: "Qua", vendas: 0 },
+    { name: "Qui", vendas: 0 },
+    { name: "Sex", vendas: 0 },
+    { name: "Sáb", vendas: 0 },
+    { name: "Dom", vendas: 0 },
   ];
 
   if (loading) {
@@ -43,7 +43,7 @@ export function Dashboard() {
             Painel <span className="text-teal-600">Administrativo</span>
           </h2>
           <p className="text-slate-500 font-medium text-base">
-            Visão geral do desempenho clínico e conversas.
+            Visão geral das vendas e produção da Metaltres.
           </p>
         </motion.div>
         <div className="hidden md:flex items-center gap-2 bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm text-slate-600 font-semibold text-sm">
@@ -54,10 +54,10 @@ export function Dashboard() {
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         {[
-          { title: "Agendamentos", value: stats.totalAppointments.toString(), trend: "Este mês", icon: CalendarCheck, color: "bg-teal-50 text-teal-600" },
+          { title: "Orçamentos", value: stats.totalAppointments.toString(), trend: "Este mês", icon: CalendarCheck, color: "bg-teal-50 text-teal-600" },
           { title: "Faturamento", value: `R$ ${stats.totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`, trend: "Este mês", icon: TrendingUp, color: "bg-emerald-50 text-emerald-600" },
           { title: "Conversas Digitais", value: stats.totalMessages.toString(), trend: "Conversas", icon: MessageSquare, color: "bg-slate-50 text-slate-600" },
-          { title: "Novos Pacientes", value: `+${stats.newPatients}`, trend: "Este mês", icon: Users, color: "bg-teal-50 text-teal-700" },
+          { title: "Novos Clientes", value: `+${stats.newPatients}`, trend: "Este mês", icon: Users, color: "bg-teal-50 text-teal-700" },
         ].map((stat, i) => (
           <motion.div key={stat.title} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
             <Card className="overflow-hidden border border-slate-100 shadow-sm">
@@ -83,7 +83,7 @@ export function Dashboard() {
           <CardHeader>
             <CardTitle className="text-lg font-bold text-slate-900 flex items-center gap-2">
               <TrendingUp className="w-5 h-5 text-teal-600" />
-              Volume de Agendamentos
+              Volume de Vendas
             </CardTitle>
           </CardHeader>
           <CardContent className="pl-2">
@@ -94,7 +94,7 @@ export function Dashboard() {
                   <XAxis dataKey="name" stroke="#94a3b8" fontSize={14} fontWeight="bold" tickLine={false} axisLine={false} dy={10} />
                   <YAxis stroke="#94a3b8" fontSize={14} fontWeight="bold" tickLine={false} axisLine={false} />
                   <Tooltip cursor={{ fill: "#f0f9ff", radius: 10 }} contentStyle={{ borderRadius: "20px", border: "2px solid #e0f2fe", boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1)", fontWeight: "bold" }} />
-                  <Bar dataKey="agendamentos" fill="#0d9488" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="vendas" fill="#0d9488" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -113,7 +113,7 @@ export function Dashboard() {
               <div className="text-center py-12 text-slate-400">
                 <Activity className="w-12 h-12 mx-auto mb-4 text-slate-300" />
                 <p className="font-semibold text-lg">Comece a cadastrar dados</p>
-                <p className="text-sm mt-1">Os dados do sistema aparecerão aqui conforme você cadastrar pacientes, agendamentos e leads.</p>
+                <p className="text-sm mt-1">Os dados do sistema aparecerão aqui conforme você cadastrar clientes, orçamentos e leads.</p>
               </div>
             </div>
           </CardContent>

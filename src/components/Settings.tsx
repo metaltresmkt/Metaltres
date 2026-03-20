@@ -132,7 +132,7 @@ export function Settings() {
     const tabs = [
         { id: "branding", label: "Branding", icon: Palette, color: "text-teal-600" },
         { id: "ai", label: "Assistente IA", icon: Bot, color: "text-teal-600" },
-        { id: "clinic", label: "Dados da Clínica", icon: Building2, color: "text-emerald-600" },
+        { id: "clinic", label: "Dados da Empresa", icon: Building2, color: "text-emerald-600" },
         { id: "integrations", label: "Integrações", icon: Plug, color: "text-violet-600" },
     ];
 
@@ -383,7 +383,7 @@ function AISettings({ data, onChange }: { data: Partial<AIConfig>, onChange: (up
                         className="w-full px-4 py-2 border border-slate-200 rounded-lg font-medium text-slate-700 h-24"
                         value={data.bio_text || ''}
                         onChange={(e) => onChange({ bio_text: e.target.value })}
-                        placeholder="Ex: Olá! Sou a assistente IA da clínica..."
+                        placeholder="Ex: Olá! Sou a assistente IA da Metaltres..."
                     />
                 </div>
 
@@ -391,8 +391,8 @@ function AISettings({ data, onChange }: { data: Partial<AIConfig>, onChange: (up
                     <div className="flex gap-4">
                         <Bot className="w-5 h-5 text-teal-600 shrink-0" />
                         <div>
-                            <p className="font-bold text-slate-900 text-sm">Agendamento Automático</p>
-                            <p className="text-slate-500 font-medium text-xs mt-0.5">Permitir que a IA agende consultas diretamente.</p>
+                            <p className="font-bold text-slate-900 text-sm">Respostas Automáticas</p>
+                            <p className="text-slate-500 font-medium text-xs mt-0.5">Permitir que a IA responda orçamentos e dúvidas diretamente.</p>
                         </div>
                     </div>
                     <input 
@@ -414,7 +414,7 @@ function ClinicSettings({ data, onChange }: { data: Partial<Clinic>, onChange: (
                 <div className="grid gap-8 md:grid-cols-2">
                     <div className="space-y-6">
                         <div className="space-y-2">
-                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Nome da Clínica</label>
+                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Nome da Empresa</label>
                             <input 
                                 type="text" 
                                 value={data.name || ''} 
@@ -460,10 +460,10 @@ function ClinicSettings({ data, onChange }: { data: Partial<Clinic>, onChange: (
                         </div>
                         <div>
                             <p className="font-bold text-slate-700">Zona de Perigo</p>
-                            <p className="text-xs font-medium text-slate-400">Apagar todos os dados da clínica permanentemente.</p>
+                            <p className="text-xs font-medium text-slate-400">Apagar todos os dados da empresa permanentemente.</p>
                         </div>
                     </div>
-                    <Button variant="outline" className="text-rose-500 hover:bg-rose-100 border-rose-200">Apagar Clínica</Button>
+                    <Button variant="outline" className="text-rose-500 hover:bg-rose-100 border-rose-200">Apagar Dados</Button>
                 </div>
             </CardContent>
         </Card>
@@ -573,7 +573,7 @@ function IntegrationSettings({ data, onChange, onConnect, onCancel, connecting }
                                     type="text"
                                     value={data.api_id || ''}
                                     onChange={(e) => onChange({ api_id: e.target.value })}
-                                    placeholder="Ex: clinica-whatsapp-01"
+                                    placeholder="Ex: metaltres-whatsapp-01"
                                     className="w-full px-4 py-2.5 border border-slate-200 rounded-lg font-medium text-slate-700 text-sm placeholder:text-slate-300 focus:ring-2 focus:ring-teal-100 focus:border-teal-300 outline-none transition-all"
                                 />
                             </div>

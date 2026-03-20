@@ -13,6 +13,7 @@ import {
   Edit2,
   Trash2,
   AlertCircle,
+  Bot,
 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -57,7 +58,7 @@ import { LeadChat } from "./LeadChat";
 export function LeadKanban() {
   const { data: stages, loading: stagesLoading, reorder: reorderStages, update: updateStage, create: createStage, remove: removeStage } = useFunnelStages();
   const { data: leads, loading: leadsLoading, create, update, remove } = useLeads();
-  const { aiConfig } = useSettings();
+  const { aiConfig, updateAI } = useSettings();
   const [showModal, setShowModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);

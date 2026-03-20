@@ -1,0 +1,22 @@
+﻿src/components/Appointments.tsx(41,10): error TS2305: Module '"../hooks/useSupabase"' has no exported member 'useAppointments'.
+src/components/Appointments.tsx(41,27): error TS2305: Module '"../hooks/useSupabase"' has no exported member 'useDoctors'.
+src/components/Appointments.tsx(41,39): error TS2305: Module '"../hooks/useSupabase"' has no exported member 'usePatients'.
+src/components/Appointments.tsx(44,30): error TS2307: Cannot find module './PatientModal' or its corresponding type declarations.
+src/components/DoctorScheduleSettings.tsx(5,10): error TS2305: Module '"../hooks/useSupabase"' has no exported member 'Doctor'.
+src/components/DoctorScheduleSettings.tsx(5,18): error TS2305: Module '"../hooks/useSupabase"' has no exported member 'useDoctors'.
+src/components/DoctorsManagement.tsx(17,10): error TS2305: Module '"../hooks/useSupabase"' has no exported member 'useDoctors'.
+src/components/DoctorsManagement.tsx(17,22): error TS2305: Module '"../hooks/useSupabase"' has no exported member 'Doctor'.
+src/components/PatientSearchSelector.tsx(5,10): error TS2305: Module '"../hooks/useSupabase"' has no exported member 'Patient'.
+src/components/Quotes.tsx(283,32): error TS2339: Property 'base_price' does not exist on type 'Product'.
+src/components/Quotes.tsx(299,35): error TS2339: Property 'base_price' does not exist on type 'Product'.
+supabase/functions/ai-scheduler/index.ts(1,23): error TS2307: Cannot find module 'https://deno.land/std@0.168.0/http/server.ts' or its corresponding type declarations.
+supabase/functions/ai-scheduler/index.ts(2,30): error TS2307: Cannot find module 'https://esm.sh/@supabase/supabase-js@2.7.1' or its corresponding type declarations.
+supabase/functions/ai-scheduler/index.ts(28,7): error TS2304: Cannot find name 'Deno'.
+supabase/functions/ai-scheduler/index.ts(29,7): error TS2304: Cannot find name 'Deno'.
+supabase/functions/whatsapp-bridge/index.ts(1,23): error TS2307: Cannot find module 'https://deno.land/std@0.168.0/http/server.ts' or its corresponding type declarations.
+supabase/functions/whatsapp-bridge/index.ts(2,30): error TS2307: Cannot find module 'https://esm.sh/@supabase/supabase-js@2' or its corresponding type declarations.
+supabase/functions/whatsapp-bridge/index.ts(22,7): error TS2304: Cannot find name 'Deno'.
+supabase/functions/whatsapp-bridge/index.ts(23,7): error TS2304: Cannot find name 'Deno'.
+supabase/functions/whatsapp-bridge/index.ts(30,26): error TS2304: Cannot find name 'Deno'.
+supabase/functions/whatsapp-bridge/index.ts(30,68): error TS2304: Cannot find name 'Deno'.
+supabase/functions/whatsapp-bridge/index.ts(69,27): error TS2304: Cannot find name 'Deno'.

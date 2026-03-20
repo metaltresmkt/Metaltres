@@ -783,25 +783,23 @@ export function AISecretary() {
               Gestão inteligente de vendas e produção na Metaltres.
             </p>
           </div>
-          {aiConfig && (
-            <div className="flex items-center gap-3">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                {aiConfig.auto_schedule ? 'IA Ativa' : 'IA Pausada'}
-              </span>
-              <button
-                onClick={() => updateAI({ ...aiConfig, auto_schedule: !aiConfig.auto_schedule })}
-                className={cn(
-                  "w-12 h-6 rounded-full relative transition-all",
-                  aiConfig.auto_schedule ? "bg-teal-600" : "bg-slate-300"
-                )}
-              >
-                <div className={cn(
-                  "w-4 h-4 bg-white rounded-full absolute top-1 transition-all shadow-sm",
-                  aiConfig.auto_schedule ? "right-1" : "left-1"
-                )} />
-              </button>
-            </div>
-          )}
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+              {aiConfig?.auto_schedule ? 'IA Ativa' : 'IA Pausada'}
+            </span>
+            <button
+              onClick={() => updateAI({ ...aiConfig, auto_schedule: !aiConfig?.auto_schedule })}
+              className={cn(
+                "w-12 h-6 rounded-full relative transition-all",
+                aiConfig?.auto_schedule ? "bg-teal-600" : "bg-slate-300"
+              )}
+            >
+              <div className={cn(
+                "w-4 h-4 bg-white rounded-full absolute top-1 transition-all shadow-sm",
+                aiConfig?.auto_schedule ? "right-1" : "left-1"
+              )} />
+            </button>
+          </div>
         </div>
         <div className="flex bg-slate-50 p-1.5 rounded-2xl border border-slate-200 overflow-x-auto scrollbar-hide gap-1 w-full min-w-0">
           {[
@@ -1112,8 +1110,17 @@ function ConfigView() {
     if (aiConfig) {
       setLocalConfig({ ...aiConfig });
       setIsDirty(false);
+    } else if (!loading) {
+      setLocalConfig({
+        name: "Assistente Metaltres",
+        response_style: "cordial",
+        prompt: "Você é a secretária virtual da Metaltres, uma loja especializada em Metal e Vidro. Seu objetivo é ajudar os clientes com orçamentos e dúvidas técnicas.",
+        sla_minutes: 120,
+        business_hours: { start: "08:00", end: "18:00", days: [1, 2, 3, 4, 5] },
+        default_ticket_value: 0
+      });
     }
-  }, [aiConfig]);
+  }, [aiConfig, loading]);
 
   if (loading || !localConfig) {
     return (

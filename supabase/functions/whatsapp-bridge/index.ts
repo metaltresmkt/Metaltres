@@ -37,9 +37,11 @@ serve(async (req) => {
 
       const { data: instance } = await supabaseClient
         .from('whatsapp_instances')
-        .select('api_id, api_token')
+        .select('api_url, api_token')
         .eq('clinic_id', clinic_id)
         .maybeSingle()
+
+      if (!instance) throw new Error('Instância WhatsApp não encontrada para esta clínica.')
 
       const response = await fetch(webhookUrl, {
         method: 'POST',
@@ -49,8 +51,8 @@ serve(async (req) => {
           clinic_id,
           group_name,
           participants,
-          api_id: instance?.api_id,
-          api_token: instance?.api_token,
+          api_url: instance.api_url,
+          api_token: instance.api_token,
           timestamp: new Date().toISOString(),
         }),
       })
@@ -61,6 +63,46 @@ serve(async (req) => {
 
       return new Response(
         JSON.stringify({ success: true, message: 'Grupo criado com sucesso.' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      )
+    }
+
+    // ── Enviar Mensagem ────────────────────────────────────────────────────────
+    if (action === 'send_message') {
+      const { to, content } = body
+
+      const { data: instance } = await supabaseClient
+        .from('whatsapp_instances')
+        .select('api_url, api_token')
+        .eq('clinic_id', clinic_id)
+        .maybeSingle()
+
+      if (!instance || !instance.api_url || !instance.api_token) {
+        throw new Error('Configuração de API WhatsApp incompleta ou não encontrada.')
+      }
+
+      // Supondo Evolution API: POST /message/sendText/{instance}
+      // Mas usaremos uma rota genérica ou n8n se preferir.
+      // Aqui, vou usar o n8n como intermediário para maior flexibilidade:
+      const n8nWebhookUrl = Deno.env.get('WHATSAPP_SEND_WEBHOOK') || Deno.env.get('WHATSAPP_CONNECTION_WEBHOOK')
+      
+      const response = await fetch(n8nWebhookUrl!, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event: 'send_message',
+          clinic_id,
+          to,
+          content,
+          api_url: instance.api_url,
+          api_token: instance.api_token,
+        }),
+      })
+
+      if (!response.ok) throw new Error(`Falha ao enviar mensagem via n8n: ${response.status}`)
+
+      return new Response(
+        JSON.stringify({ success: true, message: 'Mensagem enviada para processamento.' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
       )
     }

@@ -27,6 +27,7 @@ export interface BadgeProps
     VariantProps<typeof badgeVariants> {
   className?: string;
   variant?: "default" | "secondary" | "destructive" | "outline" | null;
+  children?: React.ReactNode;
 }
 
 function Badge({ className, variant, ...props }: BadgeProps) {

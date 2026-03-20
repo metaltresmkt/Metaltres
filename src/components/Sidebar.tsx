@@ -3,6 +3,7 @@ import {
   LayoutDashboard,
   Bot,
   CircleDollarSign,
+  Package,
   ClipboardList,
   Users,
   Settings,
@@ -17,7 +18,7 @@ import { motion } from "framer-motion";
 import { useAuth, UserRole } from "../contexts/AuthContext";
 import { ChevronDown } from "lucide-react";
 
-// Logo removed for professional medicine icon
+// Logotipo da Metaltres
 
 interface SidebarProps {
   activeTab: string;
@@ -31,10 +32,11 @@ export function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
     { id: "dashboard", label: "Visão Geral", icon: LayoutDashboard, color: "text-emerald-600", roles: ['gestor', 'vendedor', 'producao'] },
     { id: "ai-secretary", label: "Assistente IA", icon: Bot, color: "text-teal-600", roles: ['gestor', 'vendedor'] },
     { id: "quotes", label: "Orçamentos", icon: FileText, color: "text-teal-700", roles: ['gestor', 'vendedor'] },
-    { id: "production", label: "Produção", icon: Hammer, color: "text-slate-700", roles: ['gestor', 'producao'] },
+    { id: "production", label: "Produção", icon: Hammer, color: "text-slate-700", roles: ['gestor', 'vendedor', 'producao'] },
+    { id: "inventory", label: "Estoque", icon: Package, color: "text-teal-600", roles: ['gestor', 'vendedor', 'producao'] },
     { id: "customers", label: "Clientes", icon: Users, color: "text-emerald-800", roles: ['gestor', 'vendedor'] },
-    { id: "finance", label: "Financeiro", icon: CircleDollarSign, color: "text-emerald-700", roles: ['gestor'] },
-    { id: "settings", label: "Configurações", icon: Settings, color: "text-slate-500", roles: ['gestor'] },
+    { id: "finance", label: "Financeiro", icon: CircleDollarSign, color: "text-emerald-700", roles: ['gestor', 'vendedor', 'producao'] },
+    { id: "settings", label: "Configurações", icon: Settings, color: "text-slate-500", roles: ['gestor', 'vendedor', 'producao'] },
   ];
 
   const navItems = allNavItems.filter(item => item.roles.includes(userRole));
@@ -48,7 +50,7 @@ export function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
           </div>
           <div className="flex flex-col">
             <span className="text-xl font-black text-slate-900 tracking-tight">
-              {clinicName.toLowerCase().includes('clinica') ? 'Metaltres' : clinicName.split(' ')[0]}
+              {clinicName.toLowerCase().includes('clinica') || clinicName.toLowerCase().includes('matriz') ? 'Metaltres' : clinicName}
             </span>
             <span className="text-[10px] font-bold text-teal-600 uppercase tracking-widest -mt-1">Metal & Vidro</span>
           </div>

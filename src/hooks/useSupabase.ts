@@ -274,7 +274,10 @@ export interface Product {
   description: string | null;
   category: string | null;
   base_price: number;
-  unit_type: 'm2' | 'linear' | 'unidade';
+  unit_type: 'm2' | 'linear' | 'unit';
+  sku: string | null;
+  current_stock: number;
+  min_stock: number;
   is_active: boolean;
   created_at: string;
 }
@@ -360,9 +363,15 @@ export interface Lead {
   sla_breach_count: number;
   last_message_at: string | null;
   last_outbound_at: string | null;
+  last_message_preview?: string | null;
+  last_message_by?: string | null;
   created_at: string;
   updated_at: string;
 }
+
+// Aliases for compatibility with medical-themed components
+export const usePatients = useCustomers;
+export const useDoctors = useSellers;
 
 export function useFunnelStages() {
   const { profile } = useAuth();
@@ -1141,4 +1150,156 @@ export function useChatMessages(leadId?: string) {
   };
 
   return { data, loading, error, refetch: fetch, send };
+}
+
+// ==========================================
+// INVENTORY MOVEMENTS (Movimentações de Estoque)
+// ==========================================
+export interface InventoryMovement {
+  id: string;
+  clinic_id: string;
+  product_id: string;
+  type: 'in' | 'out';
+  quantity: number;
+  reason: 'purchase' | 'sale' | 'adjustment' | 'production_usage' | 'return';
+  reference_id: string | null;
+  notes: string | null;
+  created_at: string;
+  created_by: string | null;
+  // Joined
+  product?: { name: string; sku: string | null };
+}
+
+export function useInventory() {
+  const { profile } = useAuth();
+  const [movements, setMovements] = useState<InventoryMovement[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchMovements = useCallback(async (silent = false) => {
+    if (!profile?.clinic_id) {
+      if (!silent) setLoading(false);
+      return;
+    }
+    if (!silent) setLoading(true);
+    const { data, error } = await supabase
+      .from('inventory_movements')
+      .select('*, product:products(name, sku)')
+      .eq('clinic_id', profile.clinic_id)
+      .order('created_at', { ascending: false });
+    
+    if (error) { setError(error.message); if (!silent) setLoading(false); return; }
+    setMovements(data || []);
+    setError(null);
+    if (!silent) setLoading(false);
+  }, [profile?.clinic_id]);
+
+  useEffect(() => { 
+    fetchMovements(); 
+  }, [fetchMovements]);
+
+  const addMovement = async (movement: Partial<InventoryMovement>) => {
+    if (!profile?.clinic_id) return null;
+    const { data, error } = await supabase
+      .from('inventory_movements')
+      .insert({ 
+        ...movement, 
+        clinic_id: profile.clinic_id,
+        created_by: profile.id
+      })
+      .select('*, product:products(name, sku)')
+      .single();
+    
+    if (error) { setError(error.message); return null; }
+    await fetchMovements(true);
+    return data;
+  };
+
+  return { movements, loading, error, refetch: fetchMovements, addMovement };
+}
+
+// ==========================================
+// APPOINTMENTS (Agendamentos / Medições)
+// ==========================================
+export interface Appointment {
+  id: string;
+  clinic_id: string;
+  patient_id: string;
+  doctor_id: string;
+  date: string;
+  time: string;
+  notes: string | null;
+  status: 'pendente' | 'confirmado' | 'realizado' | 'cancelado' | 'faltou';
+  source: 'manual' | 'ia';
+  created_at: string;
+  // Joined
+  patient?: { name: string; phone: string | null; cpf: string | null };
+  doctor?: { name: string };
+}
+
+export function useAppointments() {
+  const { profile } = useAuth();
+  const [data, setData] = useState<Appointment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetch = useCallback(async (silent = false) => {
+    if (!profile?.clinic_id) {
+      if (!silent) setLoading(false);
+      return;
+    }
+    if (!silent) setLoading(true);
+    const { data, error } = await supabase
+      .from('appointments')
+      .select('*, patient:customers(name, phone, cpf), doctor:sellers(name)')
+      .eq('clinic_id', profile.clinic_id)
+      .order('date', { ascending: false });
+    
+    if (error) { setError(error.message); if (!silent) setLoading(false); return; }
+    setData(data || []);
+    setError(null);
+    if (!silent) setLoading(false);
+  }, [profile?.clinic_id]);
+
+  useEffect(() => { 
+    fetch(); 
+    if (!profile?.clinic_id) return;
+
+    const channel = supabase
+      .channel('appointments_realtime')
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'appointments',
+        filter: `clinic_id=eq.${profile.clinic_id}`
+      }, () => fetch(true))
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [fetch, profile?.clinic_id]);
+
+  const create = async (apt: Partial<Appointment>) => {
+    if (!profile?.clinic_id) return null;
+    const { data, error } = await supabase
+      .from('appointments')
+      .insert({ ...apt, clinic_id: profile.clinic_id })
+      .select('*, patient:customers(name, phone, cpf), doctor:sellers(name)')
+      .single();
+    if (error) { setError(error.message); return null; }
+    return data;
+  };
+
+  const update = async (id: string, updates: Partial<Appointment>) => {
+    const { error } = await supabase.from('appointments').update(updates).eq('id', id);
+    if (error) { setError(error.message); return false; }
+    return true;
+  };
+
+  const remove = async (id: string) => {
+    const { error } = await supabase.from('appointments').delete().eq('id', id);
+    if (error) { setError(error.message); return false; }
+    return true;
+  };
+
+  return { data, loading, error, refetch: fetch, create, update, remove };
 }

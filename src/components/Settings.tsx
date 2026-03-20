@@ -4,7 +4,6 @@ import { Button } from "./ui/button";
 import {
     Palette,
     Bot,
-    Building2,
     Bell,
     Lock,
     Globe,
@@ -14,7 +13,6 @@ import {
     Volume2,
     Trash2,
     CloudUpload,
-    Plug,
     MessageCircle,
     QrCode,
     Wifi,
@@ -29,15 +27,15 @@ import {
     Loader2,
     X,
     Plus,
+    Settings as SettingsIcon,
 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSettings, Clinic, AIConfig, WhatsappInstance } from "../hooks/useSupabase";
 import { supabase } from "../lib/supabase";
-
 export function Settings() {
     const { clinic, aiConfig, whatsapp, loading, updateClinic, updateAI, updateWhatsapp } = useSettings();
-    const [activeTab, setActiveTab] = useState<"branding" | "ai" | "clinic" | "integrations">("branding");
+    const [activeTab, setActiveTab] = useState<"general" | "branding" | "ai">("general");
     
     // Local states for editing
     const [localClinic, setLocalClinic] = useState<Partial<Clinic>>({});
@@ -55,12 +53,15 @@ export function Settings() {
     const handleSave = async () => {
         setSaving(true);
         try {
-            if (activeTab === 'branding' || activeTab === 'clinic') {
+            if (activeTab === 'general') {
+                await Promise.all([
+                    updateClinic(localClinic),
+                    updateWhatsapp(localWA)
+                ]);
+            } else if (activeTab === 'branding') {
                 await updateClinic(localClinic);
             } else if (activeTab === 'ai') {
                 await updateAI(localAI);
-            } else if (activeTab === 'integrations') {
-                await updateWhatsapp(localWA);
             }
         } finally {
             setSaving(false);
@@ -130,11 +131,12 @@ export function Settings() {
     }
 
     const tabs = [
+        { id: "general", label: "Geral", icon: SettingsIcon, color: "text-slate-600" },
         { id: "branding", label: "Branding", icon: Palette, color: "text-teal-600" },
         { id: "ai", label: "Assistente IA", icon: Bot, color: "text-teal-600" },
-        { id: "clinic", label: "Dados da Empresa", icon: Building2, color: "text-emerald-600" },
-        { id: "integrations", label: "Integrações", icon: Plug, color: "text-violet-600" },
     ];
+
+    console.log("Metaltres Settings Rendered. Active Tab:", activeTab);
 
     return (
         <div className="space-y-8 h-full flex flex-col">
@@ -144,7 +146,7 @@ export function Settings() {
                     animate={{ opacity: 1, x: 0 }}
                 >
                     <h2 className="text-3xl font-bold tracking-tight text-slate-900">
-                        Configurações <span className="text-teal-600">do Sistema</span>
+                        Configurações <span className="text-teal-600">GERAIS do Sistema</span>
                     </h2>
                     <p className="text-slate-500 font-medium text-base">
                         Personalize o ambiente e o comportamento do sistema.
@@ -184,6 +186,21 @@ export function Settings() {
                         transition={{ duration: 0.2 }}
                         className="space-y-6"
                     >
+                        {activeTab === "general" && (
+                            <div className="grid gap-8 grid-cols-1 lg:grid-cols-2">
+                                <CompanySettings 
+                                    data={localClinic} 
+                                    onChange={(updates) => setLocalClinic(prev => ({ ...prev, ...updates }))} 
+                                />
+                                <IntegrationSettings 
+                                    data={localWA} 
+                                    onChange={(updates) => setLocalWA(prev => ({ ...prev, ...updates }))} 
+                                    onConnect={handleWhatsappConnect}
+                                    onCancel={handleWhatsappCancel}
+                                    connecting={connecting}
+                                />
+                            </div>
+                        )}
                         {activeTab === "branding" && (
                             <BrandingSettings 
                                 data={localClinic} 
@@ -194,21 +211,6 @@ export function Settings() {
                             <AISettings 
                                 data={localAI} 
                                 onChange={(updates) => setLocalAI(prev => ({ ...prev, ...updates }))} 
-                            />
-                        )}
-                        {activeTab === "clinic" && (
-                            <ClinicSettings 
-                                data={localClinic} 
-                                onChange={(updates) => setLocalClinic(prev => ({ ...prev, ...updates }))} 
-                            />
-                        )}
-                        {activeTab === "integrations" && (
-                            <IntegrationSettings 
-                                data={localWA} 
-                                onChange={(updates) => setLocalWA(prev => ({ ...prev, ...updates }))} 
-                                onConnect={handleWhatsappConnect}
-                                onCancel={handleWhatsappCancel}
-                                connecting={connecting}
                             />
                         )}
                     </motion.div>
@@ -387,27 +389,108 @@ function AISettings({ data, onChange }: { data: Partial<AIConfig>, onChange: (up
                     />
                 </div>
 
-                <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-200">
-                    <div className="flex gap-4">
-                        <Bot className="w-5 h-5 text-teal-600 shrink-0" />
-                        <div>
-                            <p className="font-bold text-slate-900 text-sm">Respostas Automáticas</p>
-                            <p className="text-slate-500 font-medium text-xs mt-0.5">Permitir que a IA responda orçamentos e dúvidas diretamente.</p>
-                        </div>
+                <div className="pt-6 border-t border-slate-100 flex items-center justify-between">
+                    <div>
+                        <p className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                             <CheckCircle2 className="w-4 h-4 text-emerald-500" /> Confirmação Automática
+                        </p>
+                        <p className="text-slate-500 font-medium text-xs mt-0.5">Enviar mensagem confirmando o aceite do orçamento.</p>
                     </div>
                     <input 
                         type="checkbox" 
                         className="w-5 h-5 accent-teal-600"
-                        checked={data.auto_schedule || false}
-                        onChange={(e) => onChange({ auto_schedule: e.target.checked })}
+                        checked={data.confirm_enabled || false}
+                        onChange={(e) => onChange({ confirm_enabled: e.target.checked })}
                     />
                 </div>
+
+                {data.confirm_enabled && (
+                    <div className="space-y-4 pt-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                        <textarea 
+                            className="w-full px-4 py-3 border border-slate-200 rounded-lg font-medium text-slate-700 h-24 text-sm bg-slate-50/30"
+                            value={data.confirm_message || ''}
+                            onChange={(e) => onChange({ confirm_message: e.target.value })}
+                            placeholder="Ex: Seu orçamento foi recebido com sucesso! Em breve entraremos em contato..."
+                        />
+                        <div className="flex items-center gap-4">
+                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Tempo de Espera (min)</label>
+                            <input 
+                                type="number" 
+                                className="w-20 px-3 py-1.5 border border-slate-200 rounded-lg text-sm font-bold"
+                                value={data.confirm_lead_time || 0}
+                                onChange={(e) => onChange({ confirm_lead_time: parseInt(e.target.value) })}
+                            />
+                        </div>
+                    </div>
+                )}
+
+                <div className="pt-6 border-t border-slate-100 flex items-center justify-between">
+                    <div>
+                        <p className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                             <RefreshCw className="w-4 h-4 text-blue-500" /> Follow-up de Vendas
+                        </p>
+                        <p className="text-slate-500 font-medium text-xs mt-0.5">Reativar leads que não responderam ao orçamento.</p>
+                    </div>
+                    <input 
+                        type="checkbox" 
+                        className="w-5 h-5 accent-teal-600"
+                        checked={data.followup_enabled || false}
+                        onChange={(e) => onChange({ followup_enabled: e.target.checked })}
+                    />
+                </div>
+
+                {data.followup_enabled && (
+                    <div className="space-y-4 pt-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                        <textarea 
+                            className="w-full px-4 py-3 border border-slate-200 rounded-lg font-medium text-slate-700 h-24 text-sm bg-slate-50/30"
+                            value={data.followup_message || ''}
+                            onChange={(e) => onChange({ followup_message: e.target.value })}
+                            placeholder="Ex: Olá! Passando para saber se conseguiu avaliar o orçamento que enviamos..."
+                        />
+                        <div className="flex items-center gap-4">
+                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Atraso (horas)</label>
+                            <input 
+                                type="number" 
+                                className="w-20 px-3 py-1.5 border border-slate-200 rounded-lg text-sm font-bold"
+                                value={data.followup_delay || 0}
+                                onChange={(e) => onChange({ followup_delay: parseInt(e.target.value) })}
+                            />
+                        </div>
+                    </div>
+                )}
+
+                <div className="pt-6 border-t border-slate-100 flex items-center justify-between">
+                    <div>
+                        <p className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                             <Plus className="w-4 h-4 text-violet-500" /> Transbordo Humano (Handoff)
+                        </p>
+                        <p className="text-slate-500 font-medium text-xs mt-0.5">Notificar vendedores quando a IA não consegue resolver.</p>
+                    </div>
+                    <input 
+                        type="checkbox" 
+                        className="w-5 h-5 accent-teal-600"
+                        checked={data.handoff_enabled || false}
+                        onChange={(e) => onChange({ handoff_enabled: e.target.checked })}
+                    />
+                </div>
+
+                {data.handoff_enabled && (
+                    <div className="flex items-center gap-4 pt-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">SLA de Atendimento (min)</label>
+                        <input 
+                            type="number" 
+                            className="w-20 px-3 py-1.5 border border-slate-200 rounded-lg text-sm font-bold"
+                            value={data.sla_minutes || 15}
+                            onChange={(e) => onChange({ sla_minutes: parseInt(e.target.value) })}
+                        />
+                    </div>
+                )}
             </CardContent>
         </Card>
     );
 }
 
-function ClinicSettings({ data, onChange }: { data: Partial<Clinic>, onChange: (updates: Partial<Clinic>) => void }) {
+function CompanySettings({ data, onChange }: { data: Partial<Clinic>, onChange: (updates: Partial<Clinic>) => void }) {
     return (
         <Card className="border border-slate-200 shadow-sm max-w-4xl mx-auto">
             <CardContent className="p-8">
@@ -419,7 +502,7 @@ function ClinicSettings({ data, onChange }: { data: Partial<Clinic>, onChange: (
                                 type="text" 
                                 value={data.name || ''} 
                                 onChange={(e) => onChange({ name: e.target.value })}
-                                className="w-full px-4 py-2 border border-slate-200 rounded-lg font-medium text-slate-700" 
+                                className="w-full px-4 py-2 border border-slate-200 rounded-lg font-medium text-slate-700 focus:ring-2 focus:ring-teal-100 outline-none transition-all" 
                             />
                         </div>
                         <div className="space-y-2">
@@ -428,7 +511,7 @@ function ClinicSettings({ data, onChange }: { data: Partial<Clinic>, onChange: (
                                 type="text" 
                                 value={data.cnpj || ''} 
                                 onChange={(e) => onChange({ cnpj: e.target.value })}
-                                className="w-full px-4 py-2 border border-slate-200 rounded-lg font-medium text-slate-700" 
+                                className="w-full px-4 py-2 border border-slate-200 rounded-lg font-medium text-slate-700 focus:ring-2 focus:ring-teal-100 outline-none transition-all" 
                             />
                         </div>
                         <div className="space-y-2">
@@ -437,17 +520,17 @@ function ClinicSettings({ data, onChange }: { data: Partial<Clinic>, onChange: (
                                 type="text" 
                                 value={data.phone || ''} 
                                 onChange={(e) => onChange({ phone: e.target.value })}
-                                className="w-full px-4 py-2 border border-slate-200 rounded-lg font-medium text-slate-700" 
+                                className="w-full px-4 py-2 border border-slate-200 rounded-lg font-medium text-slate-700 focus:ring-2 focus:ring-teal-100 outline-none transition-all" 
                             />
                         </div>
                     </div>
                     <div className="space-y-6">
                         <div className="space-y-2">
-                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Endereço</label>
+                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Endereço Completo</label>
                             <textarea 
                                 value={data.address || ''}
                                 onChange={(e) => onChange({ address: e.target.value })}
-                                className="w-full px-4 py-2 border border-slate-200 rounded-lg font-medium text-slate-700 h-[210px]" 
+                                className="w-full px-4 py-2 border border-slate-200 rounded-lg font-medium text-slate-700 h-[210px] focus:ring-2 focus:ring-teal-100 outline-none transition-all" 
                             />
                         </div>
                     </div>
@@ -459,11 +542,11 @@ function ClinicSettings({ data, onChange }: { data: Partial<Clinic>, onChange: (
                             <Trash2 className="w-5 h-5" />
                         </div>
                         <div>
-                            <p className="font-bold text-slate-700">Zona de Perigo</p>
-                            <p className="text-xs font-medium text-slate-400">Apagar todos os dados da empresa permanentemente.</p>
+                            <p className="font-bold text-slate-700 text-sm">Zona de Perigo</p>
+                            <p className="text-[10px] font-medium text-slate-400">Apagar todos os dados da empresa permanentemente.</p>
                         </div>
                     </div>
-                    <Button variant="outline" className="text-rose-500 hover:bg-rose-100 border-rose-200">Apagar Dados</Button>
+                    <Button variant="outline" className="text-rose-500 hover:bg-rose-100 border-rose-200 h-9 font-bold text-xs">Apagar Sistema</Button>
                 </div>
             </CardContent>
         </Card>

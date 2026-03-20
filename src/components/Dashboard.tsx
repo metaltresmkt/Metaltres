@@ -54,10 +54,10 @@ export function Dashboard() {
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         {[
-          { title: "Orçamentos", value: stats.totalAppointments.toString(), trend: "Este mês", icon: CalendarCheck, color: "bg-teal-50 text-teal-600" },
-          { title: "Faturamento", value: `R$ ${stats.totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`, trend: "Este mês", icon: TrendingUp, color: "bg-emerald-50 text-emerald-600" },
-          { title: "Conversas Digitais", value: stats.totalMessages.toString(), trend: "Conversas", icon: MessageSquare, color: "bg-slate-50 text-slate-600" },
-          { title: "Novos Clientes", value: `+${stats.newPatients}`, trend: "Este mês", icon: Users, color: "bg-teal-50 text-teal-700" },
+          { title: "Orçamentos", value: (stats.totalQuotes || 0).toString(), trend: "Este mês", icon: CalendarCheck, color: "bg-teal-50 text-teal-600" },
+          { title: "Faturamento", value: `R$ ${(stats.totalRevenue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`, trend: "Este mês", icon: TrendingUp, color: "bg-emerald-50 text-emerald-600" },
+          { title: "Conversas Digitais", value: (stats.totalMessages || 0).toString(), trend: "Conversas", icon: MessageSquare, color: "bg-slate-50 text-slate-600" },
+          { title: "Novos Clientes", value: `+${stats.newCustomers || 0}`, trend: "Este mês", icon: Users, color: "bg-teal-50 text-teal-700" },
         ].map((stat, i) => (
           <motion.div key={stat.title} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
             <Card className="overflow-hidden border border-slate-100 shadow-sm">

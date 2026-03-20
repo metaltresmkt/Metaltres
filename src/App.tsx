@@ -6,6 +6,7 @@ import { Finance } from './components/Finance';
 import { Quotes } from './components/Quotes';
 import { ProductionOrders } from './components/ProductionOrders';
 import { Customers } from './components/Customers';
+import { Inventory } from './components/Inventory';
 import { Settings } from './components/Settings';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -44,6 +45,8 @@ function AppContent() {
         return <ProductionOrders />;
       case 'customers':
         return <Customers />;
+      case 'inventory':
+        return <Inventory />;
       case 'settings':
         return <Settings />;
       default:

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase, supabaseUrl, supabaseAnonKey } from '../lib/supabase';
 import { Session, User } from '@supabase/supabase-js';
 
 export type UserRole = 'gestor' | 'vendedor' | 'producao';
@@ -39,7 +39,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(newSession?.user ?? null);
 
       if (newSession?.user) {
-        await fetchProfile(newSession.user.id);
+        // Pass the token directly to avoid deadlocking getSession on reload
+        await fetchProfile(newSession.user.id, newSession.access_token);
       } else {
         setProfile(null);
         setClinicName('');
@@ -50,18 +51,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  async function fetchProfile(userId: string) {
+  async function fetchProfile(userId: string, token: string) {
     console.log('AuthContext: Fetching profile for:', userId);
+    
+    // SAFEGUARD: Force stop loading after 5 seconds if Supabase hangs
+    const timeoutId = setTimeout(() => {
+      console.warn('AuthContext: fetchProfile took too long, forcing load stop.');
+      setLoading(false);
+    }, 5000);
+
     try {
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle();
+      // BULLETPROOF FETCH: Bypass supabase-js query queue which sometimes hangs in Dev Mode
+      if (!token) throw new Error("No token for profile fetch");
+
+      const response = await fetch(`${supabaseUrl}/rest/v1/users?id=eq.${userId}&select=*`, {
+        headers: {
+          'apikey': supabaseAnonKey,
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const rawData = await response.json();
+      const userData = rawData && rawData.length > 0 ? rawData[0] : null;
+      const userError = null;
 
       if (userError) {
         console.error('AuthContext: User fetch error:', userError);
-        setLoading(false);
         return;
       }
 
@@ -74,23 +93,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           full_name: userData.full_name
         });
 
-        const { data: clinicData } = await supabase
-          .from('lojas')
-          .select('name')
-          .eq('id', userData.loja_id)
-          .maybeSingle();
-
-        if (clinicData?.name) {
-          setClinicName(clinicData.name);
-        } else {
-          setClinicName('Metaltres');
+        const clinicResponse = await fetch(`${supabaseUrl}/rest/v1/lojas?id=eq.${userData.loja_id}&select=name`, {
+          headers: {
+            'apikey': supabaseAnonKey,
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        let clinicNameParsed = 'Metaltres';
+        if (clinicResponse.ok) {
+          const clinicRawData = await clinicResponse.json();
+          if (clinicRawData && clinicRawData.length > 0 && clinicRawData[0].name) {
+            clinicNameParsed = clinicRawData[0].name;
+          }
         }
+        
+        setClinicName(clinicNameParsed);
       } else {
         console.warn('AuthContext: No profile found in users table');
       }
     } catch (error) {
       console.error('AuthContext: Profile error:', error);
     } finally {
+      clearTimeout(timeoutId);
       console.log('AuthContext: Done loading');
       setLoading(false);
     }

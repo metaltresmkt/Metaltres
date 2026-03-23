@@ -7,7 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 // ==========================================
 export interface Seller {
   id: string;
-  clinic_id: string;
+  loja_id: string;
   user_id: string | null;
   name: string;
   is_active: boolean;
@@ -21,7 +21,7 @@ export function useSellers() {
   const [error, setError] = useState<string | null>(null);
 
   const fetch = useCallback(async (silent = false) => {
-    if (!profile?.clinic_id) {
+    if (!profile?.loja_id) {
       if (!silent) setLoading(false);
       return;
     }
@@ -29,18 +29,18 @@ export function useSellers() {
     const { data, error } = await supabase
       .from('sellers')
       .select('*')
-      .eq('clinic_id', profile.clinic_id)
+      .eq('loja_id', profile.loja_id)
       .order('name');
     
     if (error) { setError(error.message); if (!silent) setLoading(false); return; }
     setData(data || []);
     setError(null);
     if (!silent) setLoading(false);
-  }, [profile?.clinic_id]);
+  }, [profile?.loja_id]);
 
   useEffect(() => { 
     fetch(); 
-    if (!profile?.clinic_id) return;
+    if (!profile?.loja_id) return;
 
     const channel = supabase
       .channel('sellers_realtime')
@@ -48,20 +48,20 @@ export function useSellers() {
         event: '*', 
         schema: 'public', 
         table: 'sellers',
-        filter: `clinic_id=eq.${profile.clinic_id}`
+        filter: `loja_id=eq.${profile.loja_id}`
       }, () => {
         fetch(true);
       })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [fetch, profile?.clinic_id]);
+  }, [fetch, profile?.loja_id]);
 
   const create = async (seller: Partial<Seller>) => {
-    if (!profile?.clinic_id) return null;
+    if (!profile?.loja_id) return null;
     const { data, error } = await supabase
       .from('sellers')
-      .insert({ ...seller, clinic_id: profile.clinic_id })
+      .insert({ ...seller, loja_id: profile.loja_id })
       .select()
       .single();
     if (error) { setError(error.message); return null; }
@@ -88,7 +88,7 @@ export function useSellers() {
 // ==========================================
 export interface Customer {
   id: string;
-  clinic_id: string;
+  loja_id: string;
   name: string;
   phone: string | null;
   email: string | null;
@@ -106,7 +106,7 @@ export function useCustomers() {
   const [error, setError] = useState<string | null>(null);
 
   const fetch = useCallback(async (silent = false) => {
-    if (!profile?.clinic_id) {
+    if (!profile?.loja_id) {
       if (!silent) setLoading(false);
       return;
     }
@@ -114,18 +114,18 @@ export function useCustomers() {
     const { data, error } = await supabase
       .from('customers')
       .select('*')
-      .eq('clinic_id', profile.clinic_id)
+      .eq('loja_id', profile.loja_id)
       .order('name');
     
     if (error) { setError(error.message); if (!silent) setLoading(false); return; }
     setData(data || []);
     setError(null);
     if (!silent) setLoading(false);
-  }, [profile?.clinic_id]);
+  }, [profile?.loja_id]);
 
   useEffect(() => { 
     fetch(); 
-    if (!profile?.clinic_id) return;
+    if (!profile?.loja_id) return;
 
     const channel = supabase
       .channel('customers_realtime')
@@ -133,20 +133,20 @@ export function useCustomers() {
         event: '*', 
         schema: 'public', 
         table: 'customers',
-        filter: `clinic_id=eq.${profile.clinic_id}`
+        filter: `loja_id=eq.${profile.loja_id}`
       }, () => {
         fetch(true);
       })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [fetch, profile?.clinic_id]);
+  }, [fetch, profile?.loja_id]);
 
   const create = async (c: Partial<Customer>) => {
-    if (!profile?.clinic_id) return null;
+    if (!profile?.loja_id) return null;
     const { data, error } = await supabase
       .from('customers')
-      .insert({ ...c, clinic_id: profile.clinic_id })
+      .insert({ ...c, loja_id: profile.loja_id })
       .select()
       .single();
     if (error) { setError(error.message); return null; }
@@ -173,7 +173,7 @@ export function useCustomers() {
 // ==========================================
 export interface Quote {
   id: string;
-  clinic_id: string;
+  loja_id: string;
   customer_id: string;
   seller_id: string;
   status: 'rascunho' | 'enviado' | 'aprovado' | 'rejeitado' | 'cancelado';
@@ -194,7 +194,7 @@ export function useQuotes() {
   const [error, setError] = useState<string | null>(null);
 
   const fetch = useCallback(async (silent = false) => {
-    if (!profile?.clinic_id) {
+    if (!profile?.loja_id) {
       if (!silent) setLoading(false);
       return;
     }
@@ -203,7 +203,7 @@ export function useQuotes() {
     let query = supabase
       .from('quotes')
       .select('*, customer:customers(name, phone), seller:sellers(name)')
-      .eq('clinic_id', profile.clinic_id);
+      .eq('loja_id', profile.loja_id);
 
     if (userRole === 'vendedor') {
       // No schema original de médicos, o vendedor via apenas os dele.
@@ -217,11 +217,11 @@ export function useQuotes() {
     setData(data || []);
     setError(null);
     if (!silent) setLoading(false);
-  }, [profile?.clinic_id, userRole, profile?.id]);
+  }, [profile?.loja_id, userRole, profile?.id]);
 
   useEffect(() => { 
     fetch(); 
-    if (!profile?.clinic_id) return;
+    if (!profile?.loja_id) return;
 
     const channel = supabase
       .channel('quotes_realtime')
@@ -229,20 +229,20 @@ export function useQuotes() {
         event: '*', 
         schema: 'public', 
         table: 'quotes',
-        filter: `clinic_id=eq.${profile.clinic_id}`
+        filter: `loja_id=eq.${profile.loja_id}`
       }, () => {
         fetch(true);
       })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [fetch, profile?.clinic_id]);
+  }, [fetch, profile?.loja_id]);
 
   const create = async (quote: Partial<Quote>) => {
-    if (!profile?.clinic_id) return null;
+    if (!profile?.loja_id) return null;
     const { data, error } = await supabase
       .from('quotes')
-      .insert({ ...quote, clinic_id: profile.clinic_id })
+      .insert({ ...quote, loja_id: profile.loja_id })
       .select('*, customer:customers(name, phone), seller:sellers(name)')
       .single();
     if (error) { setError(error.message); return null; }
@@ -269,7 +269,7 @@ export function useQuotes() {
 // ==========================================
 export interface Product {
   id: string;
-  clinic_id: string;
+  loja_id: string;
   name: string;
   description: string | null;
   category: string | null;
@@ -289,7 +289,7 @@ export function useProducts() {
   const [error, setError] = useState<string | null>(null);
 
   const fetch = useCallback(async (silent = false) => {
-    if (!profile?.clinic_id) {
+    if (!profile?.loja_id) {
       if (!silent) setLoading(false);
       return;
     }
@@ -297,22 +297,22 @@ export function useProducts() {
     const { data, error } = await supabase
       .from('products')
       .select('*')
-      .eq('clinic_id', profile.clinic_id)
+      .eq('loja_id', profile.loja_id)
       .order('name');
     
     if (error) { setError(error.message); if (!silent) setLoading(false); return; }
     setData(data || []);
     setError(null);
     if (!silent) setLoading(false);
-  }, [profile?.clinic_id]);
+  }, [profile?.loja_id]);
 
   useEffect(() => { fetch(); }, [fetch]);
 
   const create = async (p: Partial<Product>) => {
-    if (!profile?.clinic_id) return null;
+    if (!profile?.loja_id) return null;
     const { data, error } = await supabase
       .from('products')
-      .insert({ ...p, clinic_id: profile.clinic_id })
+      .insert({ ...p, loja_id: profile.loja_id })
       .select()
       .single();
     if (error) { setError(error.message); return null; }
@@ -339,7 +339,7 @@ export function useProducts() {
 // ==========================================
 export interface FunnelStage {
   id: string;
-  clinic_id: string;
+  loja_id: string;
   name: string;
   position: number;
   color: string | null;
@@ -350,7 +350,7 @@ export interface FunnelStage {
 
 export interface Lead {
   id: string;
-  clinic_id: string;
+  loja_id: string;
   name: string;
   phone: string | null;
   email: string | null;
@@ -369,9 +369,6 @@ export interface Lead {
   updated_at: string;
 }
 
-// Aliases for compatibility with medical-themed components
-export const usePatients = useCustomers;
-export const useDoctors = useSellers;
 
 export function useFunnelStages() {
   const { profile } = useAuth();
@@ -379,7 +376,7 @@ export function useFunnelStages() {
   const [loading, setLoading] = useState(true);
 
   const fetch = useCallback(async () => {
-    if (!profile?.clinic_id) {
+    if (!profile?.loja_id) {
       setLoading(false);
       return;
     }
@@ -387,15 +384,15 @@ export function useFunnelStages() {
     const { data } = await supabase
       .from('funnel_stages')
       .select('*')
-      .eq('clinic_id', profile.clinic_id)
+      .eq('loja_id', profile.loja_id)
       .order('position');
     setData(data || []);
     setLoading(false);
-  }, [profile?.clinic_id]);
+  }, [profile?.loja_id]);
 
   useEffect(() => { 
     fetch(); 
-    if (!profile?.clinic_id) return;
+    if (!profile?.loja_id) return;
 
     const channel = supabase
       .channel('funnel_stages_realtime')
@@ -403,14 +400,14 @@ export function useFunnelStages() {
         event: '*', 
         schema: 'public', 
         table: 'funnel_stages',
-        filter: `clinic_id=eq.${profile.clinic_id}`
+        filter: `loja_id=eq.${profile.loja_id}`
       }, () => {
         fetch();
       })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [fetch, profile?.clinic_id]);
+  }, [fetch, profile?.loja_id]);
 
   const update = async (id: string, updates: Partial<FunnelStage>) => {
     const { error } = await supabase.from('funnel_stages').update(updates).eq('id', id);
@@ -433,11 +430,11 @@ export function useFunnelStages() {
   };
 
   const create = async (stage: Partial<FunnelStage>) => {
-    if (!profile?.clinic_id) return null;
+    if (!profile?.loja_id) return null;
     const { data: lastStage } = await supabase
       .from('funnel_stages')
       .select('position')
-      .eq('clinic_id', profile.clinic_id)
+      .eq('loja_id', profile.loja_id)
       .order('position', { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -445,7 +442,7 @@ export function useFunnelStages() {
     const newPosition = (lastStage?.position ?? -1) + 1;
     const { data, error } = await supabase
       .from('funnel_stages')
-      .insert({ ...stage, clinic_id: profile.clinic_id, position: newPosition })
+      .insert({ ...stage, loja_id: profile.loja_id, position: newPosition })
       .select()
       .single();
     if (error) return null;
@@ -462,7 +459,7 @@ export function useLeads() {
   const [error, setError] = useState<string | null>(null);
 
   const fetch = useCallback(async (silent = false) => {
-    if (!profile?.clinic_id) {
+    if (!profile?.loja_id) {
       if (!silent) setLoading(false);
       return;
     }
@@ -470,18 +467,18 @@ export function useLeads() {
     const { data, error } = await supabase
       .from('leads')
       .select('*')
-      .eq('clinic_id', profile.clinic_id)
+      .eq('loja_id', profile.loja_id)
       .order('updated_at', { ascending: false, nullsFirst: false });
     
     if (error) { setError(error.message); if (!silent) setLoading(false); return; }
     setData(data || []);
     setError(null);
     if (!silent) setLoading(false);
-  }, [profile?.clinic_id]);
+  }, [profile?.loja_id]);
 
   useEffect(() => { 
     fetch(); 
-    if (!profile?.clinic_id) return;
+    if (!profile?.loja_id) return;
 
     const channel = supabase
       .channel('leads_realtime')
@@ -489,20 +486,20 @@ export function useLeads() {
         event: '*', 
         schema: 'public', 
         table: 'leads',
-        filter: `clinic_id=eq.${profile.clinic_id}`
+        filter: `loja_id=eq.${profile.loja_id}`
       }, () => {
         fetch(true);
       })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [fetch, profile?.clinic_id]);
+  }, [fetch, profile?.loja_id]);
 
   const create = async (lead: Partial<Lead>) => {
-    if (!profile?.clinic_id) return null;
+    if (!profile?.loja_id) return null;
     const { data, error } = await supabase
       .from('leads')
-      .insert({ ...lead, clinic_id: profile.clinic_id })
+      .insert({ ...lead, loja_id: profile.loja_id })
       .select()
       .single();
     if (error) { setError(error.message); return null; }
@@ -542,12 +539,12 @@ export function useDashboardStats() {
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async (silent = false) => {
-    if (!profile?.clinic_id) {
+    if (!profile?.loja_id) {
       if (!silent) setLoading(false);
       return;
     }
     if (!silent) setLoading(true);
-    const clinicId = profile!.clinic_id;
+    const clinicId = profile!.loja_id;
 
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
@@ -556,14 +553,14 @@ export function useDashboardStats() {
     // Queries adaptadas para Loja de Telas
     const [quotesRes, revenueRes, customersRes, messagesRes] = await Promise.all([
       supabase.from('quotes').select('id', { count: 'exact', head: true })
-        .eq('clinic_id', clinicId).gte('created_at', startOfMonth),
+        .eq('loja_id', clinicId).gte('created_at', startOfMonth),
       supabase.from('financial_transactions').select('amount')
-        .eq('clinic_id', clinicId).eq('type', 'receita').eq('status', 'pago')
+        .eq('loja_id', clinicId).eq('type', 'receita').eq('status', 'pago')
         .gte('date', startOfMonth).lte('date', endOfMonth),
       supabase.from('customers').select('id', { count: 'exact', head: true })
-        .eq('clinic_id', clinicId).gte('created_at', startOfMonth),
+        .eq('loja_id', clinicId).gte('created_at', startOfMonth),
       supabase.from('chat_messages').select('id', { count: 'exact', head: true })
-        .eq('clinic_id', clinicId).gte('created_at', startOfMonth),
+        .eq('loja_id', clinicId).gte('created_at', startOfMonth),
     ]);
 
     const totalRevenue = (revenueRes.data || []).reduce((sum, t) => sum + Number(t.amount || 0), 0);
@@ -575,22 +572,22 @@ export function useDashboardStats() {
       newCustomers: customersRes.count || 0,
     });
     if (!silent) setLoading(false);
-  }, [profile?.clinic_id]);
+  }, [profile?.loja_id]);
 
   useEffect(() => {
     load();
-    if (!profile?.clinic_id) return;
+    if (!profile?.loja_id) return;
 
     const channel = supabase
       .channel('dashboard_realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'quotes', filter: `clinic_id=eq.${profile.clinic_id}` }, () => load(true))
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'financial_transactions', filter: `clinic_id=eq.${profile.clinic_id}` }, () => load(true))
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'customers', filter: `clinic_id=eq.${profile.clinic_id}` }, () => load(true))
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_messages', filter: `clinic_id=eq.${profile.clinic_id}` }, () => load(true))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'quotes', filter: `loja_id=eq.${profile.loja_id}` }, () => load(true))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'financial_transactions', filter: `loja_id=eq.${profile.loja_id}` }, () => load(true))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'customers', filter: `loja_id=eq.${profile.loja_id}` }, () => load(true))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_messages', filter: `loja_id=eq.${profile.loja_id}` }, () => load(true))
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [load, profile?.clinic_id]);
+  }, [load, profile?.loja_id]);
 
   return { data, loading, refetch: load };
 }
@@ -600,7 +597,7 @@ export function useDashboardStats() {
 // ==========================================
 export interface FinancialTransaction {
   id: string;
-  clinic_id: string;
+  loja_id: string;
   customer_id: string | null;
   quote_id: string | null;
   type: 'receita' | 'despesa';
@@ -620,7 +617,7 @@ export function useFinancial() {
   const [error, setError] = useState<string | null>(null);
 
   const fetch = useCallback(async (silent = false) => {
-    if (!profile?.clinic_id) {
+    if (!profile?.loja_id) {
       if (!silent) setLoading(false);
       return;
     }
@@ -628,18 +625,18 @@ export function useFinancial() {
     const { data, error } = await supabase
       .from('financial_transactions')
       .select('*')
-      .eq('clinic_id', profile.clinic_id)
+      .eq('loja_id', profile.loja_id)
       .order('date', { ascending: false });
     
     if (error) { setError(error.message); if (!silent) setLoading(false); return; }
     setData(data || []);
     setError(null);
     if (!silent) setLoading(false);
-  }, [profile?.clinic_id]);
+  }, [profile?.loja_id]);
 
   useEffect(() => { 
     fetch(); 
-    if (!profile?.clinic_id) return;
+    if (!profile?.loja_id) return;
 
     const channel = supabase
       .channel('financial_realtime')
@@ -647,20 +644,20 @@ export function useFinancial() {
         event: '*', 
         schema: 'public', 
         table: 'financial_transactions',
-        filter: `clinic_id=eq.${profile.clinic_id}`
+        filter: `loja_id=eq.${profile.loja_id}`
       }, () => {
         fetch(true);
       })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [fetch, profile?.clinic_id]);
+  }, [fetch, profile?.loja_id]);
 
   const create = async (tx: Partial<FinancialTransaction>) => {
-    if (!profile?.clinic_id) return null;
+    if (!profile?.loja_id) return null;
     const { data, error } = await supabase
       .from('financial_transactions')
-      .insert({ ...tx, clinic_id: profile.clinic_id })
+      .insert({ ...tx, loja_id: profile.loja_id })
       .select()
       .single();
     if (error) { setError(error.message); return null; }
@@ -740,7 +737,7 @@ export function useQuoteItems(quoteId: string | null) {
 // ==========================================
 export interface ProductionOrder {
   id: string;
-  clinic_id: string;
+  loja_id: string;
   quote_id: string | null;
   status: 'aguardando' | 'corte' | 'montagem' | 'pronto' | 'entregue' | 'pausado';
   priority: 'baixa' | 'normal' | 'alta' | 'urgente';
@@ -760,7 +757,7 @@ export function useProductionOrders() {
   const [loading, setLoading] = useState(true);
 
   const fetch = useCallback(async (silent = false) => {
-    if (!profile?.clinic_id) {
+    if (!profile?.loja_id) {
       if (!silent) setLoading(false);
       return;
     }
@@ -768,15 +765,15 @@ export function useProductionOrders() {
     const { data } = await supabase
       .from('production_orders')
       .select('*, quote:quotes(customer:customers(name))')
-      .eq('clinic_id', profile.clinic_id)
+      .eq('loja_id', profile.loja_id)
       .order('created_at', { ascending: false });
     setData(data || []);
     setLoading(false);
-  }, [profile?.clinic_id]);
+  }, [profile?.loja_id]);
 
   useEffect(() => { 
     fetch(); 
-    if (!profile?.clinic_id) return;
+    if (!profile?.loja_id) return;
 
     const channel = supabase
       .channel('production_realtime')
@@ -784,12 +781,12 @@ export function useProductionOrders() {
         event: '*', 
         schema: 'public', 
         table: 'production_orders',
-        filter: `clinic_id=eq.${profile.clinic_id}`
+        filter: `loja_id=eq.${profile.loja_id}`
       }, () => fetch(true))
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [fetch, profile?.clinic_id]);
+  }, [fetch, profile?.loja_id]);
 
   const updateStatus = async (id: string, status: ProductionOrder['status']) => {
     await supabase.from('production_orders').update({ status }).eq('id', id);
@@ -816,7 +813,7 @@ export interface Clinic {
 
 export interface AIConfig {
   id: string;
-  clinic_id: string;
+  loja_id: string;
   name: string | null;
   tone: number;
   response_style: 'tecnica' | 'objetiva' | 'cordial';
@@ -840,7 +837,7 @@ export interface AIConfig {
 
 export interface WhatsappInstance {
   id: string;
-  clinic_id: string;
+  loja_id: string;
   api_id?: string;
   api_token: string;
   phone_number: string | null;
@@ -857,27 +854,27 @@ export function useSettings() {
   const [loading, setLoading] = useState(true);
 
   const fetch = useCallback(async (silent = false) => {
-    if (!profile?.clinic_id) {
+    if (!profile?.loja_id) {
       if (!silent) setLoading(false);
       return;
     }
     if (!silent) setLoading(true);
 
     const [clinicRes, aiRes, waRes] = await Promise.all([
-      supabase.from('clinics').select('*').eq('id', profile.clinic_id).maybeSingle(),
-      supabase.from('ai_config').select('*').eq('clinic_id', profile.clinic_id).maybeSingle(),
-      supabase.from('whatsapp_instances').select('*').eq('clinic_id', profile.clinic_id).maybeSingle(),
+      supabase.from('lojas').select('*').eq('id', profile.loja_id).maybeSingle(),
+      supabase.from('ai_config').select('*').eq('loja_id', profile.loja_id).maybeSingle(),
+      supabase.from('whatsapp_instances').select('*').eq('loja_id', profile.loja_id).maybeSingle(),
     ]);
 
     setClinic(clinicRes.data);
     setAIConfig(aiRes.data);
     setWhatsapp(waRes.data);
     setLoading(false);
-  }, [profile?.clinic_id]);
+  }, [profile?.loja_id]);
 
   useEffect(() => { 
     fetch(); 
-    if (!profile?.clinic_id) return;
+    if (!profile?.loja_id) return;
 
     const channel = supabase
       .channel('whatsapp_instances_realtime')
@@ -885,7 +882,7 @@ export function useSettings() {
         event: '*', 
         schema: 'public', 
         table: 'whatsapp_instances',
-        filter: `clinic_id=eq.${profile.clinic_id}`
+        filter: `loja_id=eq.${profile.loja_id}`
       }, () => {
         fetch(true);
       })
@@ -894,41 +891,41 @@ export function useSettings() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [fetch, profile?.clinic_id]);
+  }, [fetch, profile?.loja_id]);
 
   const updateClinic = async (updates: Partial<Clinic>) => {
-    if (!profile?.clinic_id) return false;
-    const { error } = await supabase.from('clinics').update(updates).eq('id', profile.clinic_id);
+    if (!profile?.loja_id) return false;
+    const { error } = await supabase.from('lojas').update(updates).eq('id', profile.loja_id);
     if (!error) await fetch();
     return !error;
   };
 
   const updateAI = async (updates: Partial<AIConfig>) => {
-    if (!profile?.clinic_id) return false;
+    if (!profile?.loja_id) return false;
     const { error } = await supabase
       .from('ai_config')
       .upsert({ 
         ...updates, 
-        clinic_id: profile.clinic_id,
+        loja_id: profile.loja_id,
         updated_at: new Date().toISOString()
-      }, { onConflict: 'clinic_id' });
+      }, { onConflict: 'loja_id' });
     if (!error) await fetch();
     return !error;
   };
 
   const updateWhatsapp = async (updates: Partial<WhatsappInstance>) => {
-    if (!profile?.clinic_id) return false;
+    if (!profile?.loja_id) return false;
     
     // Check if instance exists
     if (!whatsapp) {
       const { error } = await supabase.from('whatsapp_instances').insert({
         ...updates,
-        clinic_id: profile.clinic_id
+        loja_id: profile.loja_id
       });
       if (!error) await fetch();
       return !error;
     } else {
-      const { error } = await supabase.from('whatsapp_instances').update(updates).eq('clinic_id', profile.clinic_id);
+      const { error } = await supabase.from('whatsapp_instances').update(updates).eq('loja_id', profile.loja_id);
       if (!error) await fetch();
       return !error;
     }
@@ -943,9 +940,8 @@ export function useSettings() {
 // ==========================================
 export interface ChatMessage {
   id: string;
-  clinic_id: string;
+  loja_id: string;
   lead_id: string | null;
-  patient_id: string | null;
   direction: 'inbound' | 'outbound';
   sender: 'user' | 'ai' | 'system';
   message: {
@@ -970,14 +966,14 @@ export function useChatMessages(leadId?: string) {
   const [clinicPhone, setClinicPhone] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!profile?.clinic_id) return;
+    if (!profile?.loja_id) return;
     supabase
       .from('whatsapp_instances')
       .select('phone_number')
-      .eq('clinic_id', profile.clinic_id)
+      .eq('loja_id', profile.loja_id)
       .maybeSingle()
       .then(({ data }) => setClinicPhone(data?.phone_number || null));
-  }, [profile?.clinic_id]);
+  }, [profile?.loja_id]);
 
   const parseMessage = (msg: any): any => {
     try {
@@ -1025,7 +1021,7 @@ export function useChatMessages(leadId?: string) {
   };
 
   const fetch = useCallback(async () => {
-    if (!profile?.clinic_id) {
+    if (!profile?.loja_id) {
       setLoading(false);
       return;
     }
@@ -1033,7 +1029,7 @@ export function useChatMessages(leadId?: string) {
     let query = supabase
       .from('chat_messages')
       .select('*')
-      .eq('clinic_id', profile.clinic_id);
+      .eq('loja_id', profile.loja_id);
     
     if (leadId) {
       query = query.eq('lead_id', leadId);
@@ -1051,11 +1047,11 @@ export function useChatMessages(leadId?: string) {
     setData(formattedData);
     setError(null);
     setLoading(false);
-  }, [profile?.clinic_id, leadId]);
+  }, [profile?.loja_id, leadId]);
 
   useEffect(() => { 
     fetch(); 
-    if (!profile?.clinic_id) return;
+    if (!profile?.loja_id) return;
 
     const channel = supabase
       .channel(`chat_${leadId || 'all'}`)
@@ -1063,7 +1059,7 @@ export function useChatMessages(leadId?: string) {
         event: 'INSERT', 
         schema: 'public', 
         table: 'chat_messages',
-        filter: leadId ? `lead_id=eq.${leadId}` : `clinic_id=eq.${profile.clinic_id}`
+        filter: leadId ? `lead_id=eq.${leadId}` : `loja_id=eq.${profile.loja_id}`
       }, (payload) => {
         const newMsg = payload.new as ChatMessage;
         if (!leadId || newMsg.lead_id === leadId) {
@@ -1080,10 +1076,10 @@ export function useChatMessages(leadId?: string) {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [fetch, profile?.clinic_id, leadId]);
+  }, [fetch, profile?.loja_id, leadId]);
 
   const send = async (msg: Partial<ChatMessage>) => {
-    if (!profile?.clinic_id) return null;
+    if (!profile?.loja_id) return null;
     
     const leadPhone = msg.phone;
     const finalSessionId = msg.session_id || (clinicPhone && leadPhone ? `${clinicPhone}${leadPhone}` : null);
@@ -1100,7 +1096,7 @@ export function useChatMessages(leadId?: string) {
     }
 
     const insertData: any = { 
-      clinic_id: profile.clinic_id, 
+      loja_id: profile.loja_id, 
       direction: 'outbound', 
       sender: 'user',
       lead_id: leadId || msg.lead_id,
@@ -1115,7 +1111,7 @@ export function useChatMessages(leadId?: string) {
       const { data: existingLead } = await supabase
         .from('leads')
         .select('id')
-        .eq('clinic_id', profile.clinic_id)
+        .eq('loja_id', profile.loja_id)
         .eq('phone', leadPhone)
         .maybeSingle();
 
@@ -1126,7 +1122,7 @@ export function useChatMessages(leadId?: string) {
         const { data: newLead, error: leadError } = await supabase
           .from('leads')
           .insert({
-            clinic_id: profile.clinic_id,
+            loja_id: profile.loja_id,
             name: `Lead ${leadPhone}`,
             phone: leadPhone,
             source: 'manual'
@@ -1157,7 +1153,7 @@ export function useChatMessages(leadId?: string) {
 // ==========================================
 export interface InventoryMovement {
   id: string;
-  clinic_id: string;
+  loja_id: string;
   product_id: string;
   type: 'in' | 'out';
   quantity: number;
@@ -1177,7 +1173,7 @@ export function useInventory() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchMovements = useCallback(async (silent = false) => {
-    if (!profile?.clinic_id) {
+    if (!profile?.loja_id) {
       if (!silent) setLoading(false);
       return;
     }
@@ -1185,26 +1181,26 @@ export function useInventory() {
     const { data, error } = await supabase
       .from('inventory_movements')
       .select('*, product:products(name, sku)')
-      .eq('clinic_id', profile.clinic_id)
+      .eq('loja_id', profile.loja_id)
       .order('created_at', { ascending: false });
     
     if (error) { setError(error.message); if (!silent) setLoading(false); return; }
     setMovements(data || []);
     setError(null);
     if (!silent) setLoading(false);
-  }, [profile?.clinic_id]);
+  }, [profile?.loja_id]);
 
   useEffect(() => { 
     fetchMovements(); 
   }, [fetchMovements]);
 
   const addMovement = async (movement: Partial<InventoryMovement>) => {
-    if (!profile?.clinic_id) return null;
+    if (!profile?.loja_id) return null;
     const { data, error } = await supabase
       .from('inventory_movements')
       .insert({ 
         ...movement, 
-        clinic_id: profile.clinic_id,
+        loja_id: profile.loja_id,
         created_by: profile.id
       })
       .select('*, product:products(name, sku)')
@@ -1218,88 +1214,3 @@ export function useInventory() {
   return { movements, loading, error, refetch: fetchMovements, addMovement };
 }
 
-// ==========================================
-// APPOINTMENTS (Agendamentos / Medições)
-// ==========================================
-export interface Appointment {
-  id: string;
-  clinic_id: string;
-  patient_id: string;
-  doctor_id: string;
-  date: string;
-  time: string;
-  notes: string | null;
-  status: 'pendente' | 'confirmado' | 'realizado' | 'cancelado' | 'faltou';
-  source: 'manual' | 'ia';
-  created_at: string;
-  // Joined
-  patient?: { name: string; phone: string | null; cpf: string | null };
-  doctor?: { name: string };
-}
-
-export function useAppointments() {
-  const { profile } = useAuth();
-  const [data, setData] = useState<Appointment[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetch = useCallback(async (silent = false) => {
-    if (!profile?.clinic_id) {
-      if (!silent) setLoading(false);
-      return;
-    }
-    if (!silent) setLoading(true);
-    const { data, error } = await supabase
-      .from('appointments')
-      .select('*, patient:customers(name, phone, cpf), doctor:sellers(name)')
-      .eq('clinic_id', profile.clinic_id)
-      .order('date', { ascending: false });
-    
-    if (error) { setError(error.message); if (!silent) setLoading(false); return; }
-    setData(data || []);
-    setError(null);
-    if (!silent) setLoading(false);
-  }, [profile?.clinic_id]);
-
-  useEffect(() => { 
-    fetch(); 
-    if (!profile?.clinic_id) return;
-
-    const channel = supabase
-      .channel('appointments_realtime')
-      .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public', 
-        table: 'appointments',
-        filter: `clinic_id=eq.${profile.clinic_id}`
-      }, () => fetch(true))
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, [fetch, profile?.clinic_id]);
-
-  const create = async (apt: Partial<Appointment>) => {
-    if (!profile?.clinic_id) return null;
-    const { data, error } = await supabase
-      .from('appointments')
-      .insert({ ...apt, clinic_id: profile.clinic_id })
-      .select('*, patient:customers(name, phone, cpf), doctor:sellers(name)')
-      .single();
-    if (error) { setError(error.message); return null; }
-    return data;
-  };
-
-  const update = async (id: string, updates: Partial<Appointment>) => {
-    const { error } = await supabase.from('appointments').update(updates).eq('id', id);
-    if (error) { setError(error.message); return false; }
-    return true;
-  };
-
-  const remove = async (id: string) => {
-    const { error } = await supabase.from('appointments').delete().eq('id', id);
-    if (error) { setError(error.message); return false; }
-    return true;
-  };
-
-  return { data, loading, error, refetch: fetch, create, update, remove };
-}

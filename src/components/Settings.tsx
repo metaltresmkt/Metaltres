@@ -77,7 +77,7 @@ export function Settings() {
                 if (!clinic?.id) return;
                 console.log('Enviando sinal de keep-alive para WhatsApp Bridge...');
                 await supabase.functions.invoke('whatsapp-bridge', {
-                    body: { clinic_id: clinic.id }
+                    body: { loja_id: clinic.id }
                 });
             };
 
@@ -102,7 +102,7 @@ export function Settings() {
             // O useEffect acima cuidará de chamar a Bridge a cada 15 segundos
             // Mas chamamos uma vez aqui para ser instantâneo no primeiro clique
             await supabase.functions.invoke('whatsapp-bridge', {
-                body: { clinic_id: clinic.id }
+                body: { loja_id: clinic.id }
             });
         } catch (error: any) {
             console.error('Erro ao conectar WhatsApp:', error);
@@ -579,7 +579,7 @@ function IntegrationSettings({ data, onChange, onConnect, onCancel, connecting }
             const { error } = await supabase.functions.invoke('whatsapp-bridge', {
                 body: {
                     action,
-                    clinic_id: clinic.id,
+                    loja_id: clinic.id,
                     group_name: groupName,
                     group_id: clinic.notification_group_id,
                     participants: participants.filter(p => p.phone.trim()),

@@ -6,7 +6,7 @@ export type UserRole = 'gestor' | 'vendedor' | 'producao';
 
 interface UserProfile {
   id: string;
-  clinic_id: string;
+  loja_id: string;
   role: UserRole;
   full_name: string;
 }
@@ -108,15 +108,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log('AuthContext: Profile found:', userData.full_name);
         setProfile({
           id: userData.id,
-          clinic_id: userData.clinic_id,
+          loja_id: userData.loja_id,
           role: userData.role as UserRole,
           full_name: userData.full_name
         });
 
         const { data: clinicData } = await supabase
-          .from('clinics')
+          .from('lojas')
           .select('name')
-          .eq('id', userData.clinic_id)
+          .eq('id', userData.loja_id)
           .maybeSingle();
 
         if (clinicData?.name) {
@@ -136,7 +136,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch (_) {
+      // token inválido — força limpeza manual
+    }
+    localStorage.clear();
+    setUser(null);
+    setProfile(null);
   };
 
   return (

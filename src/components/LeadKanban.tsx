@@ -593,7 +593,11 @@ export function LeadKanban() {
       {/* Lead Chat Drawer */}
       <AnimatePresence>
         {chatLead && (
-          <LeadChat lead={chatLead} onClose={() => setChatLead(null)} />
+          <LeadChat 
+            lead={chatLead} 
+            onClose={() => setChatLead(null)} 
+            showInput={false} 
+          />
         )}
       </AnimatePresence>
     </div>

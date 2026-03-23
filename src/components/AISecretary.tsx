@@ -850,7 +850,7 @@ export function AISecretary() {
 }
 
 function ChatsView() {
-  const { data: leads, loading: leadsLoading } = useLeads();
+  const { data: leads, loading: leadsLoading, update } = useLeads();
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   const selectedLead = leads.find(l => l.id === selectedLeadId);
   const { data: messages, loading: messagesLoading } = useChatMessages(selectedLeadId || undefined);
@@ -1012,14 +1012,17 @@ function ChatsView() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <span className={cn(
-                  "text-[10px] font-bold uppercase px-2 py-1 rounded",
-                  selectedLead.ai_enabled !== false 
-                    ? "bg-emerald-50 text-emerald-600 border border-emerald-100" 
-                    : "bg-slate-100 text-slate-500"
-                )}>
-                  {selectedLead.ai_enabled !== false ? "Modo Inteligente" : "Modo Manual"}
-                </span>
+                <button
+                  onClick={() => update(selectedLead.id, { ai_enabled: selectedLead.ai_enabled === false })}
+                  className={cn(
+                    "text-[10px] font-bold uppercase px-3 py-1.5 rounded-full border transition-all shadow-sm active:scale-95",
+                    selectedLead.ai_enabled !== false 
+                      ? "bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100" 
+                      : "bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100"
+                  )}
+                >
+                  {selectedLead.ai_enabled !== false ? "MODO INTELIGENTE" : "MODO MANUAL"}
+                </button>
               </div>
             </CardHeader>
 

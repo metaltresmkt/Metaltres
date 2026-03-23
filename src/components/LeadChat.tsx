@@ -10,9 +10,11 @@ import { cn } from "@/src/lib/utils";
 interface LeadChatProps {
   lead: Lead;
   onClose: () => void;
+  showInput?: boolean;
 }
 
 function stripToolCallPrefix(text: string): string {
+  if (!text || typeof text !== 'string') return text || '';
   if (!text.startsWith('[Used tools:')) return text;
   let depth = 0;
   for (let i = 0; i < text.length; i++) {
@@ -27,12 +29,23 @@ function stripToolCallPrefix(text: string): string {
 
 function extractMessageText(message: any): string {
   if (!message) return '[Mídia]';
+  
+  // If it's a string, it might be stringified JSON from the DB or just a string
   if (typeof message === 'string') {
-    const text = stripToolCallPrefix(message);
-    return text || '[Mídia]';
+    let text = message.trim();
+    if (text.startsWith('{') && text.endsWith('}')) {
+      try {
+        const parsed = JSON.parse(text);
+        return extractMessageText(parsed);
+      } catch (e) {
+        return stripToolCallPrefix(text) || '[Mídia]';
+      }
+    }
+    return stripToolCallPrefix(text) || '[Mídia]';
   }
+
   // content can be string or array
-  const rawData = message.content || message.output || message.text || message.message || "";
+  const rawData = message.content !== undefined ? message.content : (message.output || message.text || message.message || "");
   let content = '';
   
   if (Array.isArray(rawData)) {
@@ -48,7 +61,7 @@ function extractMessageText(message: any): string {
   return content.trim() || '[Mídia]';
 }
 
-export function LeadChat({ lead, onClose }: LeadChatProps) {
+export function LeadChat({ lead, onClose, showInput = true }: LeadChatProps) {
   const { data: messages, loading, send } = useChatMessages(lead.id);
   const { update: updateLead } = useLeads();
   const [content, setContent] = useState("");
@@ -112,23 +125,25 @@ export function LeadChat({ lead, onClose }: LeadChatProps) {
       <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center text-teal-700 font-bold text-lg shadow-sm">
-            {lead.name[0]}
+            {lead.name ? lead.name[0] : "?"}
           </div>
           <div>
-            <h3 className="font-bold text-slate-900 leading-tight">{lead.name}</h3>
+            <h3 className="font-bold text-slate-900 leading-tight">{lead.name || "Sem Nome"}</h3>
             <div className="flex items-center gap-3 mt-0.5">
               <button 
                 onClick={() => updateLead(lead.id, { ai_enabled: !lead.ai_enabled })}
-                className="flex items-center gap-1.5 group outline-none"
+                className={cn(
+                  "flex items-center gap-1.5 px-2 py-1 rounded-full transition-all border outline-none",
+                  lead.ai_enabled 
+                    ? "bg-emerald-50 border-emerald-100 text-emerald-600 shadow-sm" 
+                    : "bg-slate-50 border-slate-200 text-slate-400"
+                )}
               >
                 <div className={cn(
-                  "w-2.5 h-2.5 rounded-full transition-all shadow-sm",
+                  "w-2 h-2 rounded-full",
                   lead.ai_enabled ? "bg-emerald-500 animate-pulse" : "bg-slate-300"
                 )} />
-                <span className={cn(
-                  "text-[10px] font-bold uppercase tracking-wider transition-colors",
-                  lead.ai_enabled ? "text-emerald-600" : "text-slate-400 group-hover:text-slate-600"
-                )}>
+                <span className="text-[10px] font-bold uppercase tracking-wider">
                   IA {lead.ai_enabled ? "Ativa" : "Pausada"}
                 </span>
               </button>
@@ -202,37 +217,39 @@ export function LeadChat({ lead, onClose }: LeadChatProps) {
       </div>
 
       {/* Input Area */}
-      <div className="p-6 border-t border-slate-100 bg-white">
-        <div className="relative group">
-          <textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSend();
-              }
-            }}
-            placeholder="Digite uma mensagem..."
-            className="w-full pl-4 pr-14 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-200 font-medium text-sm min-h-[50px] max-h-[150px] resize-none transition-all group-hover:bg-white"
-          />
-          <button
-            onClick={handleSend}
-            disabled={!content.trim() || sending}
-            className={cn(
-              "absolute right-2 bottom-2 p-2 rounded-lg transition-all",
-              content.trim() && !sending 
-                ? "bg-teal-600 text-white shadow-md hover:scale-105 active:scale-95" 
-                : "bg-slate-100 text-slate-400"
-            )}
-          >
-            {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
-          </button>
+      {showInput && (
+        <div className="p-6 border-t border-slate-100 bg-white">
+          <div className="relative group">
+            <textarea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSend();
+                }
+              }}
+              placeholder="Digite uma mensagem..."
+              className="w-full pl-4 pr-14 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-200 font-medium text-sm min-h-[50px] max-h-[150px] resize-none transition-all group-hover:bg-white"
+            />
+            <button
+              onClick={handleSend}
+              disabled={!content.trim() || sending}
+              className={cn(
+                "absolute right-2 bottom-2 p-2 rounded-lg transition-all",
+                content.trim() && !sending 
+                  ? "bg-teal-600 text-white shadow-md hover:scale-105 active:scale-95" 
+                  : "bg-slate-100 text-slate-400"
+              )}
+            >
+              {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+            </button>
+          </div>
+          <p className="text-[10px] text-slate-400 mt-3 text-center font-medium">
+            As respostas enviadas aqui serão encaminhadas via WhatsApp.
+          </p>
         </div>
-        <p className="text-[10px] text-slate-400 mt-3 text-center font-medium">
-          As respostas enviadas aqui serão encaminhadas via WhatsApp.
-        </p>
-      </div>
+      )}
     </motion.div>
   );
 }

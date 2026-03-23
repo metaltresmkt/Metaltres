@@ -992,22 +992,22 @@ export function useChatMessages(leadId?: string) {
 
       // Handle LangChain / n8n specific object structures
       if (data.type === 'human' || data.type === 'ai' || data.type === 'system') {
-        if (data.content) {
+        if (data.content !== undefined) {
           data = { content: data.content };
         }
       }
 
       // Priority extraction of content
-      const rawContent = data.content || data.output || data.text || data.message || "";
+      const rawContent = data.content !== undefined ? data.content : (data.output || data.text || data.message || "");
       
       // Strip [Used tools: ...] prefix
-      let content = typeof rawContent === 'object' ? JSON.stringify(rawContent) : String(rawContent);
+      let content = typeof rawContent === 'object' ? JSON.stringify(rawContent) : String(rawContent || "");
       
       // If content is STILL a stringified JSON (common in n8n pass-through), try one more parse
       if (content.trim().startsWith('{"type":') || content.trim().startsWith('{"content":')) {
         try {
           const inner = JSON.parse(content);
-          if (inner.content) content = inner.content;
+          if (inner.content !== undefined) content = inner.content;
         } catch {}
       }
 

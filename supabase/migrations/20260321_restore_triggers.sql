@@ -1,4 +1,4 @@
--- Restoring missing columns required by the triggers
+﻿-- Restoring missing columns required by the triggers
 ALTER TABLE public.leads ADD COLUMN IF NOT EXISTS followup_count int DEFAULT 0;
 ALTER TABLE public.leads ADD COLUMN IF NOT EXISTS loss_reason text;
 ALTER TABLE public.leads ADD COLUMN IF NOT EXISTS last_message_at timestamptz;
@@ -18,7 +18,7 @@ BEGIN
   
   SELECT followup_max_attempts INTO v_max_attempts 
   FROM public.ai_config 
-  WHERE clinic_id = NEW.clinic_id LIMIT 1; 
+  WHERE loja_id = NEW.loja_id LIMIT 1; 
   
   IF v_max_attempts IS NULL OR NEW.followup_count < v_max_attempts THEN 
     RETURN NEW; 
@@ -26,7 +26,7 @@ BEGIN
   
   SELECT id INTO v_perdido_id 
   FROM public.funnel_stages 
-  WHERE clinic_id = NEW.clinic_id AND name = 'Perdido' LIMIT 1; 
+  WHERE loja_id = NEW.loja_id AND name = 'Perdido' LIMIT 1; 
   
   IF v_perdido_id IS NOT NULL AND (NEW.stage_id IS DISTINCT FROM v_perdido_id) THEN 
     NEW.stage_id := v_perdido_id; 
@@ -88,7 +88,7 @@ DECLARE
     json_data JSONB;
     v_ai_enabled boolean;
     v_global_active boolean;
-    v_ref_clinic_id UUID;
+    v_ref_loja_id UUID;
     v_ref_lead_id UUID;
     v_lead_phone TEXT;
     v_clinic_phone TEXT;
@@ -99,7 +99,7 @@ DECLARE
     v_last_out_at timestamptz;
     v_is_handoff boolean := false;
 BEGIN
-    -- [A] LIMPEZA E FORMATAÇÃO DE JSON
+    -- [A] LIMPEZA E FORMATAÃ‡ÃƒO DE JSON
     IF (NEW.message IS NOT NULL) THEN
         IF jsonb_typeof(NEW.message) = 'string' THEN
             BEGIN
@@ -129,7 +129,7 @@ BEGIN
             END;
         END IF;
 
-        -- Detecta se a mensagem da IA é um handoff (transbordo)
+        -- Detecta se a mensagem da IA Ã© um handoff (transbordo)
         IF NEW.sender = 'ai' AND json_data IS NOT NULL THEN
             IF json_data->>'content' ILIKE '%transferir%atendente%'
                OR json_data->>'content' ILIKE '%gatilho:%'
@@ -139,18 +139,18 @@ BEGIN
         END IF;
     END IF;
 
-    -- [B] DESCOBERTA DE CLÍNICA
-    IF NEW.clinic_id IS NULL AND NEW.session_id IS NOT NULL THEN
-        SELECT clinic_id INTO v_ref_clinic_id FROM public.chat_messages WHERE session_id = NEW.session_id AND clinic_id IS NOT NULL LIMIT 1;
-        IF v_ref_clinic_id IS NULL THEN
-            SELECT clinic_id INTO v_ref_clinic_id FROM public.whatsapp_instances WHERE starts_with(NEW.session_id, phone_number) LIMIT 1;
+    -- [B] DESCOBERTA DE CLÃNICA
+    IF NEW.loja_id IS NULL AND NEW.session_id IS NOT NULL THEN
+        SELECT loja_id INTO v_ref_loja_id FROM public.chat_messages WHERE session_id = NEW.session_id AND loja_id IS NOT NULL LIMIT 1;
+        IF v_ref_loja_id IS NULL THEN
+            SELECT loja_id INTO v_ref_loja_id FROM public.whatsapp_instances WHERE starts_with(NEW.session_id, phone_number) LIMIT 1;
         END IF;
-        NEW.clinic_id := v_ref_clinic_id;
+        NEW.loja_id := v_ref_loja_id;
     END IF;
 
-    -- [C] CAPTURA/CRIAÇÃO DE LEAD
-    IF NEW.clinic_id IS NOT NULL AND (NEW.lead_id IS NULL OR NEW.phone IS NULL) THEN
-        SELECT phone_number INTO v_clinic_phone FROM public.whatsapp_instances WHERE clinic_id = NEW.clinic_id LIMIT 1;
+    -- [C] CAPTURA/CRIAÃ‡ÃƒO DE LEAD
+    IF NEW.loja_id IS NOT NULL AND (NEW.lead_id IS NULL OR NEW.phone IS NULL) THEN
+        SELECT phone_number INTO v_clinic_phone FROM public.whatsapp_instances WHERE loja_id = NEW.loja_id LIMIT 1;
 
         v_lead_phone := NEW.phone;
 
@@ -165,31 +165,31 @@ BEGIN
         END IF;
 
         IF v_lead_phone IS NOT NULL AND v_lead_phone <> '' AND v_lead_phone <> COALESCE(v_clinic_phone, '') THEN
-            SELECT id INTO v_ref_lead_id FROM public.leads WHERE clinic_id = NEW.clinic_id AND phone = v_lead_phone LIMIT 1;
+            SELECT id INTO v_ref_lead_id FROM public.leads WHERE loja_id = NEW.loja_id AND phone = v_lead_phone LIMIT 1;
             IF v_ref_lead_id IS NULL THEN
                 SELECT id INTO v_stage_id FROM public.funnel_stages 
-                WHERE clinic_id = NEW.clinic_id 
+                WHERE loja_id = NEW.loja_id 
                 ORDER BY position ASC LIMIT 1;
 
                 SELECT id INTO v_stage_id FROM public.funnel_stages 
-                WHERE clinic_id = NEW.clinic_id 
+                WHERE loja_id = NEW.loja_id 
                   AND (LOWER(name) LIKE '%whatsapp%' OR LOWER(name) LIKE '%contato%')
                 ORDER BY position ASC LIMIT 1;
 
-                INSERT INTO public.leads (clinic_id, name, phone, source, stage_id)
-                VALUES (NEW.clinic_id, 'Lead ' || v_lead_phone, v_lead_phone, 'whatsapp', v_stage_id)
+                INSERT INTO public.leads (loja_id, name, phone, source, stage_id)
+                VALUES (NEW.loja_id, 'Lead ' || v_lead_phone, v_lead_phone, 'whatsapp', v_stage_id)
                 RETURNING id INTO v_ref_lead_id;
             END IF;
             NEW.lead_id := COALESCE(NEW.lead_id, v_ref_lead_id);
             NEW.phone := COALESCE(NEW.phone, v_lead_phone);
         END IF;
 
-        -- [C2] FALLBACK: se session_id = clinic phone (sem lead phone extraível),
-        -- busca o lead mais recente ativo desta clínica
-        IF NEW.lead_id IS NULL AND NEW.clinic_id IS NOT NULL THEN
+        -- [C2] FALLBACK: se session_id = clinic phone (sem lead phone extraÃ­vel),
+        -- busca o lead mais recente ativo desta clÃ­nica
+        IF NEW.lead_id IS NULL AND NEW.loja_id IS NOT NULL THEN
             SELECT id, phone INTO v_ref_lead_id, v_lead_phone 
             FROM public.leads 
-            WHERE clinic_id = NEW.clinic_id 
+            WHERE loja_id = NEW.loja_id 
               AND ai_enabled = false
             ORDER BY updated_at DESC 
             LIMIT 1;
@@ -206,8 +206,8 @@ BEGIN
     END IF;
 
     -- [D] CONTROLE DE TRANSBORDO
-    IF NEW.sender = 'ai' AND NEW.clinic_id IS NOT NULL THEN
-        SELECT auto_schedule INTO v_global_active FROM public.ai_config WHERE clinic_id = NEW.clinic_id;
+    IF NEW.sender = 'ai' AND NEW.loja_id IS NOT NULL THEN
+        SELECT auto_schedule INTO v_global_active FROM public.ai_config WHERE loja_id = NEW.loja_id;
         IF v_global_active = false THEN
             NEW.metadata := COALESCE(NEW.metadata, '{}'::jsonb) || jsonb_build_object('ai_blocked', true, 'block_reason', 'global_off');
         END IF;
@@ -223,7 +223,7 @@ BEGIN
     -- [E] AUTO-PAUSE IA, BUMP DO LEAD E SLA BREACH
     IF NEW.lead_id IS NOT NULL THEN
         IF NEW.sender = 'human' AND NEW.direction = 'outbound' THEN
-            -- Atendente humano respondeu → pausa IA e marca outbound
+            -- Atendente humano respondeu â†’ pausa IA e marca outbound
             UPDATE public.leads SET ai_enabled = false, last_outbound_at = now(), updated_at = now() WHERE id = NEW.lead_id;
         ELSIF NEW.direction = 'outbound' THEN
             -- Resposta outbound (IA ou sistema)
@@ -231,7 +231,7 @@ BEGIN
                 UPDATE public.leads SET ai_enabled = false, updated_at = now() WHERE id = NEW.lead_id;
             ELSE
                 SELECT sla_minutes, business_hours INTO v_sla_minutes, v_business_hours
-                FROM public.ai_config WHERE clinic_id = NEW.clinic_id;
+                FROM public.ai_config WHERE loja_id = NEW.loja_id;
 
                 IF v_sla_minutes IS NOT NULL AND v_sla_minutes > 0 THEN
                     SELECT last_message_at, last_outbound_at 
@@ -274,23 +274,23 @@ EXECUTE FUNCTION public.handle_chat_message_master_logic();
 CREATE OR REPLACE FUNCTION public.handle_new_clinic()
 RETURNS trigger AS $$
 BEGIN
-    -- Criar configuração de IA padrão
-    INSERT INTO public.ai_config (clinic_id)
+    -- Criar configuraÃ§Ã£o de IA padrÃ£o
+    INSERT INTO public.ai_config (loja_id)
     VALUES (NEW.id)
-    ON CONFLICT (clinic_id) DO NOTHING;
+    ON CONFLICT (loja_id) DO NOTHING;
 
-    -- Criar instância de WhatsApp padrão
-    INSERT INTO public.whatsapp_instances (clinic_id, api_url, api_token)
+    -- Criar instÃ¢ncia de WhatsApp padrÃ£o
+    INSERT INTO public.whatsapp_instances (loja_id, api_url, api_token)
     VALUES (NEW.id, '', '')
-    ON CONFLICT (clinic_id) DO NOTHING;
+    ON CONFLICT (loja_id) DO NOTHING;
 
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-DROP TRIGGER IF EXISTS on_clinic_created ON public.clinics;
+DROP TRIGGER IF EXISTS on_clinic_created ON public.lojas;
 CREATE TRIGGER on_clinic_created
-AFTER INSERT ON public.clinics
+AFTER INSERT ON public.lojas
 FOR EACH ROW
 EXECUTE FUNCTION public.handle_new_clinic();
 
@@ -300,7 +300,7 @@ RETURNS trigger AS $$
 BEGIN
   UPDATE public.ai_config
   SET phone = NEW.phone_number
-  WHERE clinic_id = NEW.clinic_id;
+  WHERE loja_id = NEW.loja_id;
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

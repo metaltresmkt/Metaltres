@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
 import { Session, User } from '@supabase/supabase-js';
 
@@ -29,47 +29,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [clinicName, setClinicName] = useState('');
-  const initializedRef = useRef(false);
 
   useEffect(() => {
-    if (initializedRef.current) return;
-    initializedRef.current = true;
-
-    // Safety timeout - if nothing happens in 5 seconds, stop loading
-    const safetyTimeout = setTimeout(() => {
-      console.warn('AuthContext: Safety timeout reached, forcing loading to false');
-      setLoading(false);
-    }, 5000);
-
-    // 1. Check for existing session first
-    supabase.auth.getSession().then(async ({ data: { session: currentSession }, error }) => {
-      console.log('AuthContext: getSession result:', currentSession?.user?.email ?? 'no session', error);
-      
-      if (error) {
-        console.error('AuthContext: getSession error:', error);
-        clearTimeout(safetyTimeout);
-        setLoading(false);
-        return;
-      }
-
-      setSession(currentSession);
-      setUser(currentSession?.user ?? null);
-
-      if (currentSession?.user) {
-        await fetchProfile(currentSession.user.id);
-      } else {
-        setLoading(false);
-      }
-      
-      clearTimeout(safetyTimeout);
-    });
-
-    // 2. Listen for future auth changes (login, logout, token refresh)
+    // Listen for auth changes (handles login, logout, token refresh, initial session)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
       console.log('AuthContext: Auth event:', event);
-      
-      // Skip INITIAL_SESSION since we handled it with getSession above
-      if (event === 'INITIAL_SESSION') return;
 
       setSession(newSession);
       setUser(newSession?.user ?? null);
@@ -83,10 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    return () => {
-      clearTimeout(safetyTimeout);
-      subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, []);
 
   async function fetchProfile(userId: string) {

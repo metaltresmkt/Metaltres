@@ -26,22 +26,26 @@ function stripToolCallPrefix(text: string): string {
 }
 
 function extractMessageText(message: any): string {
-  if (!message) return '';
-  if (typeof message === 'string') return stripToolCallPrefix(message);
-  // content pode ser string ou array (formato Anthropic)
-  if (typeof message.content === 'string') return stripToolCallPrefix(message.content);
-  if (Array.isArray(message.content)) {
-    return message.content
+  if (!message) return '[Mídia]';
+  if (typeof message === 'string') {
+    const text = stripToolCallPrefix(message);
+    return text || '[Mídia]';
+  }
+  // content can be string or array
+  const rawData = message.content || message.output || message.text || message.message || "";
+  let content = '';
+  
+  if (Array.isArray(rawData)) {
+    content = rawData
       .map((block: any) => block?.text || block?.content || '')
       .filter(Boolean)
       .join('\n');
+  } else {
+    content = typeof rawData === 'object' ? JSON.stringify(rawData) : String(rawData || '');
   }
-  if (typeof message.text === 'string') return stripToolCallPrefix(message.text);
-  if (typeof message.output === 'string') return stripToolCallPrefix(message.output);
-  // último recurso: concatena todos os valores string do objeto
-  const values = Object.values(message).filter(v => typeof v === 'string') as string[];
-  if (values.length > 0) return stripToolCallPrefix(values.join(' '));
-  return JSON.stringify(message);
+
+  content = stripToolCallPrefix(content);
+  return content.trim() || '[Mídia]';
 }
 
 export function LeadChat({ lead, onClose }: LeadChatProps) {
@@ -49,7 +53,6 @@ export function LeadChat({ lead, onClose }: LeadChatProps) {
   const { update: updateLead } = useLeads();
   const [content, setContent] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
-  const endRef = useRef<HTMLDivElement>(null);
   const [sending, setSending] = useState(false);
 
   // Solução Definitiva: MutationObserver para observar o DOM real
@@ -57,40 +60,34 @@ export function LeadChat({ lead, onClose }: LeadChatProps) {
     const el = scrollRef.current;
     if (!el) return;
 
-    // Rola para o final de forma síncrona
     const scrollDown = () => {
       el.scrollTop = el.scrollHeight;
     };
 
-    // Força o scroll na montagem (caso já tenha mensagens cacheadas)
     scrollDown();
 
-    // Observa qualquer mudança no HTML interno do container (novas mensagens)
-    const observer = new MutationObserver((mutations) => {
-      // Se houver adição de nós, força o scroll
+    const observer = new MutationObserver(() => {
       scrollDown();
     });
 
     observer.observe(el, {
-      childList: true, // Observa elementos adicionados ou removidos
-      subtree: true,   // Observa os filhos dos filhos
-      characterData: true // Observa mudanças de texto
+      childList: true,
+      subtree: true,
+      characterData: true
     });
 
-    // Como o framer-motion faz um slide-in de 300ms, damos um "empurrãozinho"
-    // contínuo durante o primeiro meio segundo de vida do componente
     let pings = 0;
     const interval = setInterval(() => {
       scrollDown();
       pings++;
-      if (pings > 10) clearInterval(interval); // 500ms total
+      if (pings > 10) clearInterval(interval);
     }, 50);
 
     return () => {
       observer.disconnect();
       clearInterval(interval);
     };
-  }, [loading]); // Só recria se o loading mudar
+  }, [loading]);
 
   const handleSend = async () => {
     if (!content.trim() || sending) return;
@@ -153,7 +150,7 @@ export function LeadChat({ lead, onClose }: LeadChatProps) {
       </div>
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 bg-slate-50/50 custom-scrollbar relative block">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 bg-slate-50/50 custom-scrollbar relative block" ref={scrollRef}>
         {loading ? (
           <div className="flex flex-col items-center justify-center h-full gap-3 text-slate-400">
             <Loader2 className="w-8 h-8 animate-spin" />
@@ -168,9 +165,11 @@ export function LeadChat({ lead, onClose }: LeadChatProps) {
           </div>
         ) : (
           <div className="space-y-6 pb-4">
-            {messages.map((msg, idx) => {
+            {messages.map((msg) => {
               const isOutbound = msg.direction === 'outbound';
               const isAI = msg.sender === 'ai';
+              const messageText = extractMessageText(msg.message);
+              const isMedia = messageText === '[Mídia]';
               
               return (
                 <div
@@ -184,9 +183,10 @@ export function LeadChat({ lead, onClose }: LeadChatProps) {
                     "px-4 py-3 rounded-2xl text-sm shadow-sm max-w-full overflow-hidden break-words",
                     isOutbound 
                       ? (isAI ? "bg-teal-600 text-white rounded-tr-none" : "bg-white text-slate-800 border border-slate-200 rounded-tr-none")
-                      : "bg-slate-200 text-slate-800 rounded-tl-none"
+                      : "bg-slate-200 text-slate-800 rounded-tl-none",
+                    isMedia && "italic opacity-70"
                   )}>
-                    {extractMessageText(msg.message)}
+                    {isMedia ? 'Mídia' : messageText}
                   </div>
                   <div className="flex items-center gap-1.5 mt-1.5 px-1">
                     {isAI && <Bot className="w-3 h-3 text-teal-600" />}
@@ -197,8 +197,6 @@ export function LeadChat({ lead, onClose }: LeadChatProps) {
                 </div>
               );
             })}
-            {/* Elemento âncora invisível no final exato do container */}
-            <div ref={endRef} className="h-1 opacity-0 pointer-events-none" />
           </div>
         )}
       </div>

@@ -980,7 +980,7 @@ export function useChatMessages(leadId?: string) {
       let data = msg;
       
       // Try to parse if it's a string
-      if (typeof msg === 'string' && (msg.startsWith('{') || msg.startsWith('['))) {
+      if (typeof msg === 'string' && (msg.trim().startsWith('{') || msg.trim().startsWith('['))) {
         try { data = JSON.parse(msg); } catch { data = { content: msg }; }
       }
 
@@ -990,11 +990,27 @@ export function useChatMessages(leadId?: string) {
       // If it's not an object, wrap it
       if (!data || typeof data !== 'object') data = { content: String(msg || '') };
 
+      // Handle LangChain / n8n specific object structures
+      if (data.type === 'human' || data.type === 'ai' || data.type === 'system') {
+        if (data.content) {
+          data = { content: data.content };
+        }
+      }
+
       // Priority extraction of content
       const rawContent = data.content || data.output || data.text || data.message || "";
       
-      // Strip [Used tools: ...] prefix using bracket counting (regex não-greedy falha com JSON aninhado)
+      // Strip [Used tools: ...] prefix
       let content = typeof rawContent === 'object' ? JSON.stringify(rawContent) : String(rawContent);
+      
+      // If content is STILL a stringified JSON (common in n8n pass-through), try one more parse
+      if (content.trim().startsWith('{"type":') || content.trim().startsWith('{"content":')) {
+        try {
+          const inner = JSON.parse(content);
+          if (inner.content) content = inner.content;
+        } catch {}
+      }
+
       if (content.includes('[Used tools:')) {
         const startIdx = content.indexOf('[Used tools:');
         let depth = 0;

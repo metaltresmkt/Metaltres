@@ -219,7 +219,7 @@ export function LeadKanban() {
                   const isPerdido = stage.name === 'Perdido';
                   const semMotivo = isPerdido && !lead.loss_reason;
                   const lastContact = lead.last_message_at ?? lead.created_at;
-                  const frozen = !!lead.converted_patient_id || isPerdido;
+                  const frozen = !!lead.converted_customer_id || isPerdido;
                   // Contagem persistente do banco + ciclo atual estourado
                   const currentCycleBreach = (() => {
                     if (frozen || !aiConfig?.sla_minutes || !aiConfig?.business_hours || !lead.last_message_at) return false;
@@ -245,7 +245,8 @@ export function LeadKanban() {
                     className={cn(
                       "bg-white px-3 py-2.5 rounded-lg border shadow-sm cursor-grab active:cursor-grabbing hover:shadow-md transition-all group",
                       draggedLead?.id === lead.id && "opacity-50",
-                      isPerdido ? "border-rose-200" : "border-slate-200"
+                      isPerdido ? "border-rose-200" : "border-slate-200",
+                      precisaResponder && "animate-pulse-red border-rose-500 z-10"
                     )}
                   >
                     {/* Header: fonte + ações */}

@@ -911,7 +911,7 @@ function ChatsView() {
           <div className="relative mt-4">
             <input
               type="text"
-              placeholder="Buscar paciente..."
+              placeholder="Buscar cliente..."
               className="w-full pl-10 pr-4 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-100 transition-all font-medium placeholder:text-slate-400"
             />
             <User className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
@@ -923,18 +923,27 @@ function ChatsView() {
               <p className="text-sm font-medium">Nenhum atendimento ativo no momento.</p>
             </div>
           ) : (
-            leads.map((lead) => (
-              <motion.div
-                key={lead.id}
-                whileHover={{ x: 2 }}
-                onClick={() => setSelectedLeadId(lead.id)}
-                className={cn(
-                  "p-3 rounded-lg cursor-pointer transition-all border",
-                  selectedLeadId === lead.id
-                    ? "bg-teal-50 border-teal-100 shadow-sm"
-                    : "border-transparent hover:bg-slate-50"
-                )}
-              >
+            leads.map((lead) => {
+              const isPrecisaResponder = !!lead.last_message_at && (
+                !lead.last_outbound_at || parseISO(lead.last_message_at) > parseISO(lead.last_outbound_at)
+              );
+              const isAguardando = !!lead.last_outbound_at && (
+                !lead.last_message_at || parseISO(lead.last_outbound_at) > parseISO(lead.last_message_at)
+              );
+
+              return (
+                <motion.div
+                  key={lead.id}
+                  whileHover={{ x: 2 }}
+                  onClick={() => setSelectedLeadId(lead.id)}
+                  className={cn(
+                    "p-3 rounded-lg cursor-pointer transition-all border",
+                    selectedLeadId === lead.id
+                      ? "bg-teal-50 border-teal-100 shadow-sm"
+                      : "border-transparent hover:bg-slate-50",
+                    isPrecisaResponder && "animate-pulse-red border-rose-500 z-10"
+                  )}
+                >
                 <div className="flex items-center gap-3">
                   <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center font-bold text-slate-700 bg-slate-100")}>
                     {lead.name[0]}
@@ -976,9 +985,10 @@ function ChatsView() {
                   </div>
                 </div>
               </motion.div>
-            ))
-          )}
-        </CardContent>
+                );
+              })
+            )}
+          </CardContent>
       </Card>
 
       {/* Main: Chat View */}

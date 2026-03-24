@@ -22,6 +22,16 @@
   scrollbar-width: none;
 }
 
+@keyframes pulse-red-fill {
+  0% { background-color: rgb(255 255 255); border-color: rgb(226 232 240); }
+  50% { background-color: rgb(254 226 226); border-color: rgb(244 63 94); }
+  100% { background-color: rgb(255 255 255); border-color: rgb(226 232 240); }
+}
+
+@utility animate-pulse-red {
+  animation: pulse-red-fill 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
 body {
   font-family: var(--font-sans);
   background-color: var(--color-clinic-bg);

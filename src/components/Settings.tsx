@@ -136,7 +136,7 @@ export function Settings() {
         { id: "ai", label: "Comercial", icon: Bot, color: "text-teal-600" },
     ];
 
-    console.log("Metaltres Settings Rendered. Active Tab:", activeTab);
+    console.log("Navs CRM Settings Rendered. Active Tab:", activeTab);
 
     return (
         <div className="space-y-8 h-full flex flex-col">
@@ -385,7 +385,7 @@ function AISettings({ data, onChange }: { data: Partial<AIConfig>, onChange: (up
                         className="w-full px-4 py-2 border border-slate-200 rounded-lg font-medium text-slate-700 h-24"
                         value={data.bio_text || ''}
                         onChange={(e) => onChange({ bio_text: e.target.value })}
-                        placeholder="Ex: Olá! Sou do Comercial da Metaltres..."
+                        placeholder="Ex: Olá! Sou do Comercial do Navs CRM..."
                     />
                 </div>
 

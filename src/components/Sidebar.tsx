@@ -18,7 +18,7 @@ import { motion } from "framer-motion";
 import { useAuth, UserRole } from "../contexts/AuthContext";
 import { ChevronDown } from "lucide-react";
 
-// Logotipo da Metaltres
+// Logotipo do Navs CRM
 
 interface SidebarProps {
   activeTab: string;
@@ -50,7 +50,7 @@ export function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
           </div>
           <div className="flex flex-col">
             <span className="text-2xl font-black text-slate-800 tracking-tighter">
-              Metaltres
+              Navs CRM
             </span>
           </div>
         </div>

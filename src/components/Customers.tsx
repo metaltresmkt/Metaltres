@@ -30,7 +30,7 @@ export function Customers() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-slate-900">Clientes</h2>
-          <p className="text-slate-500 font-medium italic text-sm">Base de clientes da Metaltres.</p>
+          <p className="text-slate-500 font-medium italic text-sm">Base de clientes do Navs CRM.</p>
         </div>
         <Button 
           onClick={() => { setEditingCustomer(null); setIsModalOpen(true); }}

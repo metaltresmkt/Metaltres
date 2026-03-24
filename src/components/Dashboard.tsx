@@ -43,7 +43,7 @@ export function Dashboard() {
             Painel <span className="text-teal-600">Administrativo</span>
           </h2>
           <p className="text-slate-500 font-medium text-base">
-            Visão geral das vendas e produção da Metaltres.
+            Visão geral das vendas e produção do Navs CRM.
           </p>
         </motion.div>
         <div className="hidden md:flex items-center gap-2 bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm text-slate-600 font-semibold text-sm">

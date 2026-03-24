@@ -118,7 +118,7 @@ function ConfirmationsView() {
       // Initialize with defaults if config doesn't exist yet
       setLocalConfig({
         confirm_enabled: false,
-        confirm_message: "Olá {cliente}, seu orçamento da Metaltres está pronto! Podemos agendar a instalação para o dia {data}?",
+        confirm_message: "Olá {cliente}, seu orçamento do Navs CRM está pronto! Podemos agendar a instalação para o dia {data}?",
         confirm_lead_time: 1440,
         response_style: 'cordial',
         response_speed: 'instantanea',
@@ -326,7 +326,7 @@ function FollowupsView() {
     } else if (!loading) {
       setLocalConfig({
         followup_enabled: false,
-        followup_message: "Olá {cliente}, percebi que ainda não finalizamos seu orçamento da Metaltres. Gostaria de continuar de onde paramos?",
+        followup_message: "Olá {cliente}, percebi que ainda não finalizamos seu orçamento do Navs CRM. Gostaria de continuar de onde paramos?",
         followup_delay: 1440,
       });
     }
@@ -781,7 +781,7 @@ export function AISecretary() {
               Assistente <span className="text-teal-600">IA</span>
             </h2>
             <p className="text-slate-500 font-medium text-base">
-              Gestão inteligente de vendas e produção na Metaltres.
+              Gestão inteligente de vendas e produção no Navs CRM.
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -1163,9 +1163,9 @@ function ConfigView() {
       setIsDirty(false);
     } else if (!loading) {
       setLocalConfig({
-        name: "Assistente Metaltres",
+        name: "Assistente Navs CRM",
         response_style: "cordial",
-        prompt: "Você é a secretária virtual da Metaltres, uma loja especializada em Metal e Vidro. Seu objetivo é ajudar os clientes com orçamentos e dúvidas técnicas.",
+        prompt: "Você é a secretária virtual do Navs CRM. Seu objetivo é ajudar os clientes com orçamentos e dúvidas técnicas.",
         sla_minutes: 120,
         business_hours: { start: "08:00", end: "18:00", days: [1, 2, 3, 4, 5] },
         default_ticket_value: 0

@@ -100,7 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         });
         
-        let clinicNameParsed = 'Metaltres';
+        let clinicNameParsed = 'Navs CRM';
         if (clinicResponse.ok) {
           const clinicRawData = await clinicResponse.json();
           if (clinicRawData && clinicRawData.length > 0 && clinicRawData[0].name) {
@@ -137,7 +137,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       session,
       profile,
-      clinicName: clinicName || 'Metaltres',
+      clinicName: clinicName || 'Navs CRM',
       userRole: profile?.role || 'vendedor',
       loading,
       signOut

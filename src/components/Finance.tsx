@@ -145,7 +145,7 @@ export function Finance() {
             Painel <span className="text-teal-600">Financeiro</span>
           </h2>
           <p className="text-slate-500 font-medium text-base">
-            Acompanhe a saúde financeira da Metaltres.
+            Acompanhe a saúde financeira do Navs CRM.
           </p>
         </motion.div>
         <div className="flex items-center gap-3">

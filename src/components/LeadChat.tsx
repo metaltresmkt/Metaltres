@@ -5,7 +5,7 @@ import { Button } from "./ui/button";
 import { useChatMessages, ChatMessage, Lead, useLeads } from "../hooks/useSupabase";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { cn } from "@/src/lib/utils";
+import { cn, parseMessageContent } from "@/src/lib/utils";
 
 interface LeadChatProps {
   lead: Lead;
@@ -13,53 +13,7 @@ interface LeadChatProps {
   showInput?: boolean;
 }
 
-function stripToolCallPrefix(text: string): string {
-  if (!text || typeof text !== 'string') return text || '';
-  if (!text.startsWith('[Used tools:')) return text;
-  let depth = 0;
-  for (let i = 0; i < text.length; i++) {
-    if (text[i] === '[') depth++;
-    else if (text[i] === ']') {
-      depth--;
-      if (depth === 0) return text.slice(i + 1).trimStart();
-    }
-  }
-  return text;
-}
-
-function extractMessageText(message: any): string {
-  if (!message) return '[Mídia]';
-  
-  // If it's a string, it might be stringified JSON from the DB or just a string
-  if (typeof message === 'string') {
-    let text = message.trim();
-    if (text.startsWith('{') && text.endsWith('}')) {
-      try {
-        const parsed = JSON.parse(text);
-        return extractMessageText(parsed);
-      } catch (e) {
-        return stripToolCallPrefix(text) || '[Mídia]';
-      }
-    }
-    return stripToolCallPrefix(text) || '[Mídia]';
-  }
-
-  // content can be string or array
-  const rawData = message.content !== undefined ? message.content : (message.output || message.text || message.message || "");
-  let content = '';
-  
-  if (Array.isArray(rawData)) {
-    content = rawData
-      .map((block: any) => block?.text || block?.content || '')
-      .filter(Boolean)
-      .join('\n');
-  } else {
-    content = typeof rawData === 'object' ? JSON.stringify(rawData) : String(rawData || '');
-  }
-
-  content = stripToolCallPrefix(content);
-  return content.trim() || '[Mídia]';
-}
+// Removed local parsing helpers, now using shared utils.
 
 export function LeadChat({ lead, onClose, showInput = true }: LeadChatProps) {
   const { data: messages, loading, send } = useChatMessages(lead.id);
@@ -183,8 +137,7 @@ export function LeadChat({ lead, onClose, showInput = true }: LeadChatProps) {
             {messages.map((msg) => {
               const isOutbound = msg.direction === 'outbound';
               const isAI = msg.sender === 'ai';
-              const messageText = extractMessageText(msg.message);
-              const isMedia = messageText === '[Mídia]';
+              const parsed = parseMessageContent(msg.message);
               
               return (
                 <div
@@ -195,13 +148,48 @@ export function LeadChat({ lead, onClose, showInput = true }: LeadChatProps) {
                   )}
                 >
                   <div className={cn(
-                    "px-4 py-3 rounded-2xl text-sm shadow-sm max-w-full overflow-hidden break-words",
+                    "rounded-2xl text-sm shadow-sm max-w-full overflow-hidden break-words",
                     isOutbound 
-                      ? (isAI ? "bg-teal-600 text-white rounded-tr-none" : "bg-white text-slate-800 border border-slate-200 rounded-tr-none")
-                      : "bg-slate-200 text-slate-800 rounded-tl-none",
-                    isMedia && "italic opacity-70"
+                      ? (isAI ? "bg-teal-600 text-white rounded-tr-none px-4 py-3" : "bg-white text-slate-800 border border-slate-200 rounded-tr-none px-4 py-3")
+                      : "bg-slate-200 text-slate-800 rounded-tl-none px-4 py-3",
+                    parsed.isMedia && "p-1.5"
                   )}>
-                    {isMedia ? 'Mídia' : messageText}
+                    {parsed.mediaUrl ? (
+                      <div className="space-y-2">
+                        {parsed.mediaType === 'image' && (
+                          <img 
+                            src={parsed.mediaUrl} 
+                            alt="Mídia" 
+                            className="rounded-xl max-w-full h-auto max-h-[300px] object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                            onClick={() => window.open(parsed.mediaUrl, '_blank')}
+                          />
+                        )}
+                        {parsed.mediaType === 'video' && (
+                          <video 
+                            src={parsed.mediaUrl} 
+                            controls 
+                            className="rounded-xl max-w-full max-h-[300px]"
+                          />
+                        )}
+                        {parsed.mediaType === 'audio' && (
+                          <audio 
+                            src={parsed.mediaUrl} 
+                            controls 
+                            className="max-w-full"
+                          />
+                        )}
+                        {parsed.text && parsed.text !== '[Mídia]' && (
+                          <p className={cn(
+                            "px-2.5 py-1.5 leading-relaxed",
+                            isOutbound ? "text-white/90" : "text-slate-600"
+                          )}>
+                            {parsed.text}
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      parsed.text
+                    )}
                   </div>
                   <div className="flex items-center gap-1.5 mt-1.5 px-1">
                     {isAI && <Bot className="w-3 h-3 text-teal-600" />}

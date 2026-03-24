@@ -29,7 +29,7 @@ import {
   DollarSign,
   AlertCircle,
 } from "lucide-react";
-import { cn } from "@/src/lib/utils";
+import { cn, parseMessageContent } from "@/src/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { LeadKanban } from "./LeadKanban";
 import { ServiceDashboard } from "./ServiceDashboard";
@@ -1104,53 +1104,87 @@ function ChatsView() {
                 </div>
               ) : (
                 messages.map((msg, i) => {
-                  const isOutbound = msg.direction === 'outbound';
-                  const isAI = msg.sender === 'ai';
-                  
-                  return (
-                    <div 
-                      key={msg.id || i}
-                      className={cn(
-                        "flex gap-4 max-w-[85%] min-w-0", // Adicionado min-w-0 aqui
-                        isOutbound ? "ml-auto flex-row-reverse" : ""
-                      )}
-                    >
-                      <div className={cn(
-                        "w-8 h-8 rounded-lg shadow-sm flex-shrink-0 flex items-center justify-center",
-                        isAI ? "bg-teal-600 shadow-md" : 
-                        (isOutbound ? "bg-slate-800 shadow-md" : "bg-white border border-slate-200")
-                      )}>
-                        {isAI ? (
-                          <Bot className="w-5 h-5 text-white" />
-                        ) : (
-                          <User className={cn("w-4 h-4", isOutbound ? "text-white" : "text-slate-400")} />
+                    const isOutbound = msg.direction === 'outbound';
+                    const isAI = msg.sender === 'ai';
+                    const parsed = parseMessageContent(msg.message);
+                    
+                    return (
+                      <div 
+                        key={msg.id || i}
+                        className={cn(
+                          "flex gap-4 max-w-[85%] min-w-0",
+                          isOutbound ? "ml-auto flex-row-reverse" : ""
                         )}
-                      </div>
-                  <div className={cn(
-                    "px-4 py-3 rounded-2xl text-sm shadow-sm max-w-full overflow-hidden break-words",
-                    isAI 
-                      ? "bg-teal-600 text-white rounded-tr-none" 
-                      : (isOutbound 
-                          ? "bg-slate-800 text-white rounded-tr-none"
-                          : "bg-white border border-slate-200 text-slate-700 rounded-tl-none")
-                  )}>
-                    <p className="text-sm font-medium leading-relaxed whitespace-pre-wrap break-words">
-                          {typeof msg.message === 'object' 
-                            ? (msg.message.content || msg.message.output || msg.message.text || JSON.stringify(msg.message)) 
-                            : String(msg.message || '')
-                          }
-                        </p>
-                        <div className="flex items-center justify-between gap-4 mt-1">
-                          <span className={cn(
-                            "text-[9px] block opacity-60 font-bold uppercase ml-auto",
-                            isOutbound ? "text-white text-right" : "text-slate-400"
-                          )}>
-                            {format(new Date(msg.created_at), 'HH:mm')}
-                          </span>
+                      >
+                        <div className={cn(
+                          "w-8 h-8 rounded-lg shadow-sm flex-shrink-0 flex items-center justify-center",
+                          isAI ? "bg-teal-600 shadow-md" : 
+                          (isOutbound ? "bg-slate-800 shadow-md" : "bg-white border border-slate-200")
+                        )}>
+                          {isAI ? (
+                            <Bot className="w-5 h-5 text-white" />
+                          ) : (
+                            <User className={cn("w-4 h-4", isOutbound ? "text-white" : "text-slate-400")} />
+                          )}
+                        </div>
+                        <div className={cn(
+                          "rounded-2xl text-sm shadow-sm max-w-full overflow-hidden break-words",
+                          isAI 
+                            ? "bg-teal-600 text-white rounded-tr-none" 
+                            : (isOutbound 
+                                ? "bg-slate-800 text-white rounded-tr-none px-4 py-3"
+                                : "bg-white border border-slate-200 text-slate-700 rounded-tl-none px-4 py-3"),
+                          parsed.isMedia && "p-1.5"
+                        )}>
+                          {parsed.mediaUrl ? (
+                            <div className="space-y-2">
+                              {parsed.mediaType === 'image' && (
+                                <img 
+                                  src={parsed.mediaUrl} 
+                                  alt="Mídia" 
+                                  className="rounded-xl max-w-full h-auto max-h-[300px] object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                                  onClick={() => window.open(parsed.mediaUrl, '_blank')}
+                                />
+                              )}
+                              {parsed.mediaType === 'video' && (
+                                <video 
+                                  src={parsed.mediaUrl} 
+                                  controls 
+                                  className="rounded-xl max-w-full max-h-[300px]"
+                                />
+                              )}
+                              {parsed.mediaType === 'audio' && (
+                                <audio 
+                                  src={parsed.mediaUrl} 
+                                  controls 
+                                  className="max-w-full"
+                                />
+                              )}
+                              {parsed.text && parsed.text !== '[Mídia]' && (
+                                <p className={cn(
+                                  "px-2.5 py-1.5 leading-relaxed whitespace-pre-wrap break-words",
+                                  isAI || isOutbound ? "text-white/90" : "text-slate-600"
+                                )}>
+                                  {parsed.text}
+                                </p>
+                              )}
+                            </div>
+                          ) : (
+                            <p className="text-sm font-medium leading-relaxed whitespace-pre-wrap break-words">
+                              {parsed.text}
+                            </p>
+                          )}
+                          <div className="flex items-center justify-between gap-4 mt-1 px-1">
+                            <span className={cn(
+                              "text-[9px] block opacity-60 font-bold uppercase ml-auto",
+                              isAI || isOutbound ? "text-white text-right" : "text-slate-400"
+                            )}>
+                              {format(new Date(msg.created_at), 'HH:mm')}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
+                    );
                 })
               )}
             </CardContent>

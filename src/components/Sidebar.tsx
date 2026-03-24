@@ -49,10 +49,9 @@ export function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
             <LayoutGrid className="w-7 h-7" />
           </div>
           <div className="flex flex-col">
-            <span className="text-xl font-black text-slate-900 tracking-tight">
-              {clinicName.toLowerCase().includes('clinica') || clinicName.toLowerCase().includes('matriz') ? 'Metaltres' : clinicName}
+            <span className="text-2xl font-black text-slate-800 tracking-tighter">
+              Metaltres
             </span>
-            <span className="text-[10px] font-bold text-teal-600 uppercase tracking-widest -mt-1">Metal & Vidro</span>
           </div>
         </div>
       </div>

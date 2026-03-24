@@ -27,6 +27,7 @@ import {
   Plus,
   Trash2,
   DollarSign,
+  AlertCircle,
 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -954,7 +955,7 @@ function ChatsView() {
                         {lead.name}
                       </span>
                       <span className="text-[10px] font-medium text-slate-400">
-                        {format(new Date(lead.created_at), 'HH:mm')}
+                        {format(new Date(lead.last_message_at || lead.created_at), 'dd/MM/yy')}
                       </span>
                     </div>
                     <p className="text-xs text-slate-500 truncate mb-1">
@@ -970,13 +971,50 @@ function ChatsView() {
                         );
 
                         if (isAguardando) return (
-                          <span className="text-[8px] font-bold px-1 py-0.5 rounded bg-blue-50 text-blue-600 border border-blue-100 uppercase">
-                            Aguardando Lead
-                          </span>
+                          <div className="flex flex-col gap-1">
+                            <span className="text-[8px] font-bold px-1.5 py-0.5 rounded border bg-blue-50 border-blue-200 text-blue-600 uppercase">
+                              Aguardando Lead
+                            </span>
+                            {lead.sla_breach_count > 0 && (
+                              <span className={cn(
+                                "text-[8px] font-bold px-1.5 py-0.5 rounded border flex items-center gap-1 uppercase max-w-fit",
+                                lead.sla_breach_count === 1
+                                  ? "bg-amber-50 border-amber-200 text-amber-700"
+                                  : "bg-rose-50 border-rose-100 text-rose-700"
+                              )}>
+                                <AlertCircle className="w-2 h-2" />
+                                {lead.sla_breach_count}× SLA
+                              </span>
+                            )}
+                          </div>
                         );
                         if (isPrecisaResponder) return (
-                          <span className="text-[8px] font-bold px-1 py-0.5 rounded bg-amber-50 text-amber-600 border border-amber-100 uppercase">
-                            Responder Lead
+                          <div className="flex flex-col gap-1">
+                            <span className="text-[8px] font-bold px-1.5 py-0.5 rounded border bg-amber-50 border-amber-200 text-amber-600 uppercase">
+                              Responder Lead
+                            </span>
+                            {lead.sla_breach_count > 0 && (
+                              <span className={cn(
+                                "text-[8px] font-bold px-1.5 py-0.5 rounded border flex items-center gap-1 uppercase max-w-fit",
+                                lead.sla_breach_count === 1
+                                  ? "bg-amber-50 border-amber-200 text-amber-700"
+                                  : "bg-rose-50 border-rose-100 text-rose-700"
+                              )}>
+                                <AlertCircle className="w-2 h-2" />
+                                {lead.sla_breach_count}× SLA
+                              </span>
+                            )}
+                          </div>
+                        );
+                        if (lead.sla_breach_count > 0) return (
+                          <span className={cn(
+                            "text-[8px] font-bold px-1.5 py-0.5 rounded border flex items-center gap-1 uppercase max-w-fit",
+                            lead.sla_breach_count === 1
+                              ? "bg-amber-50 border-amber-200 text-amber-700"
+                              : "bg-rose-50 border-rose-100 text-rose-700"
+                          )}>
+                            <AlertCircle className="w-2 h-2" />
+                            {lead.sla_breach_count}× SLA
                           </span>
                         );
                         return null;

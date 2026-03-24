@@ -264,6 +264,7 @@ export function LeadKanban() {
                       <p className="text-[10px] font-medium text-slate-400 mt-0.5">{lead.phone}</p>
                     )}
 
+
                     {/* Motivo da perda */}
                     {isPerdido && (
                       <div className={cn(
@@ -278,26 +279,27 @@ export function LeadKanban() {
                     )}
 
                     {/* Badges de status */}
-                    {(aguardando || precisaResponder || slaBreach > 0) && (
-                      <div className="flex items-center gap-1.5 mt-2">
+                    {(aguardando || precisaResponder || (lead.sla_breach_count ?? 0) > 0) && (
+                      <div className="flex flex-wrap items-center gap-1.5 mt-2">
                         {aguardando && (
-                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border bg-blue-50 border-blue-200 text-blue-600">
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border bg-blue-50 border-blue-200 text-blue-600 uppercase">
                             Aguardando Lead
                           </span>
                         )}
                         {precisaResponder && (
-                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border bg-amber-50 border-amber-200 text-amber-600">
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border bg-amber-50 border-amber-200 text-amber-600 uppercase">
                             Responder Lead
                           </span>
                         )}
-                        {slaBreach > 0 && (
+                        {(lead.sla_breach_count ?? 0) > 0 && (
                           <span className={cn(
-                            "text-[9px] font-bold px-1.5 py-0.5 rounded border",
-                            slaBreach === 1
+                            "text-[9px] font-bold px-1.5 py-0.5 rounded border flex items-center gap-1 uppercase",
+                            lead.sla_breach_count === 1
                               ? "bg-amber-50 border-amber-200 text-amber-700"
                               : "bg-rose-50 border-rose-100 text-rose-700"
                           )}>
-                            {slaBreach}× SLA
+                            <AlertCircle className="w-2.5 h-2.5" />
+                            {lead.sla_breach_count}× SLA
                           </span>
                         )}
                       </div>

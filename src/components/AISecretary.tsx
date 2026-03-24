@@ -984,6 +984,11 @@ function ChatsView() {
                               )}>
                                 <AlertCircle className="w-2 h-2" />
                                 {lead.sla_breach_count}× SLA
+                                {lead.max_response_minutes && lead.max_response_minutes > 0 && (
+                                  <span className="ml-1 opacity-70 border-l border-current pl-1">
+                                    Pior: {lead.max_response_minutes}m
+                                  </span>
+                                )}
                               </span>
                             )}
                           </div>
@@ -1002,6 +1007,11 @@ function ChatsView() {
                               )}>
                                 <AlertCircle className="w-2 h-2" />
                                 {lead.sla_breach_count}× SLA
+                                {lead.max_response_minutes && lead.max_response_minutes > 0 && (
+                                  <span className="ml-1 opacity-70 border-l border-current pl-1">
+                                    Pior: {lead.max_response_minutes}m
+                                  </span>
+                                )}
                               </span>
                             )}
                           </div>
@@ -1015,6 +1025,11 @@ function ChatsView() {
                           )}>
                             <AlertCircle className="w-2 h-2" />
                             {lead.sla_breach_count}× SLA
+                            {lead.max_response_minutes && lead.max_response_minutes > 0 && (
+                              <span className="ml-1 opacity-70 border-l border-current pl-1">
+                                Pior: {lead.max_response_minutes}m
+                              </span>
+                            )}
                           </span>
                         );
                         return null;

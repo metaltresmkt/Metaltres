@@ -292,14 +292,22 @@ export function LeadKanban() {
                           </span>
                         )}
                         {(lead.sla_breach_count ?? 0) > 0 && (
-                          <span className={cn(
-                            "text-[9px] font-bold px-1.5 py-0.5 rounded border flex items-center gap-1 uppercase",
-                            lead.sla_breach_count === 1
-                              ? "bg-amber-50 border-amber-200 text-amber-700"
-                              : "bg-rose-50 border-rose-100 text-rose-700"
-                          )}>
+                          <span 
+                            title={lead.max_response_minutes ? `Maior tempo de espera: ${lead.max_response_minutes} min` : undefined}
+                            className={cn(
+                              "text-[9px] font-bold px-1.5 py-0.5 rounded border flex items-center gap-1 uppercase cursor-help",
+                              lead.sla_breach_count === 1
+                                ? "bg-amber-50 border-amber-200 text-amber-700"
+                                : "bg-rose-50 border-rose-100 text-rose-700"
+                            )}
+                          >
                             <AlertCircle className="w-2.5 h-2.5" />
                             {lead.sla_breach_count}× SLA
+                            {lead.max_response_minutes && lead.max_response_minutes > 0 && (
+                              <span className="ml-1 opacity-70 border-l border-current pl-1">
+                                {lead.max_response_minutes}m
+                              </span>
+                            )}
                           </span>
                         )}
                       </div>

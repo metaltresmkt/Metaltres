@@ -361,6 +361,8 @@ export interface Lead {
   ai_enabled: boolean;
   converted_customer_id: string | null;
   sla_breach_count: number;
+  first_response_minutes: number | null;
+  max_response_minutes: number | null;
   last_message_at: string | null;
   last_outbound_at: string | null;
   last_message_preview?: string | null;

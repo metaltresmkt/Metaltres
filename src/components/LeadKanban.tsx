@@ -188,12 +188,12 @@ export function LeadKanban() {
         </div>
       </div>
 
-      <div className="flex gap-4 overflow-x-auto pb-4 h-full custom-scrollbar min-h-[600px]">
+      <div className="flex gap-4 overflow-x-auto pb-4 h-full custom-scrollbar min-h-[600px]" style={{ transform: 'rotateX(180deg)' }}>
         {stages.map((stage) => {
           const stageLeads = leads.filter(l => l.stage_id === stage.id);
           const stageTotal = stageLeads.reduce((sum, l) => sum + (Number(l.estimated_value) || 0), 0);
           return (
-            <div key={stage.id} className="w-[300px] shrink-0 flex flex-col gap-4">
+            <div key={stage.id} className="w-[300px] shrink-0 flex flex-col gap-4" style={{ transform: 'rotateX(180deg)' }}>
               <div className="flex items-center gap-2 px-2">
                 <div className={cn("w-2 h-2 shrink-0 rounded-full", stageColors[stage.color || 'bg-slate-500'] || 'bg-slate-500')} />
                 <h3 className="font-bold text-slate-700 text-xs uppercase tracking-wider truncate flex-1">{stage.name}</h3>

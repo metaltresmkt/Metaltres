@@ -30,7 +30,7 @@ export function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
   
   const allNavItems = [
     { id: "dashboard", label: "Visão Geral", icon: LayoutDashboard, color: "text-emerald-600", roles: ['gestor', 'vendedor', 'producao'] },
-    { id: "ai-secretary", label: "Assistente IA", icon: Bot, color: "text-teal-600", roles: ['gestor', 'vendedor'] },
+    { id: "ai-secretary", label: "Comercial", icon: Bot, color: "text-teal-600", roles: ['gestor', 'vendedor'] },
     { id: "quotes", label: "Orçamentos", icon: FileText, color: "text-teal-700", roles: ['gestor', 'vendedor'] },
     { id: "production", label: "Produção", icon: Hammer, color: "text-slate-700", roles: ['gestor', 'vendedor', 'producao'] },
     { id: "inventory", label: "Estoque", icon: Package, color: "text-teal-600", roles: ['gestor', 'vendedor', 'producao'] },

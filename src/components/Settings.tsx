@@ -133,7 +133,7 @@ export function Settings() {
     const tabs = [
         { id: "general", label: "Geral", icon: SettingsIcon, color: "text-slate-600" },
         { id: "branding", label: "Branding", icon: Palette, color: "text-teal-600" },
-        { id: "ai", label: "Assistente IA", icon: Bot, color: "text-teal-600" },
+        { id: "ai", label: "Comercial", icon: Bot, color: "text-teal-600" },
     ];
 
     console.log("Metaltres Settings Rendered. Active Tab:", activeTab);
@@ -310,7 +310,7 @@ function AISettings({ data, onChange }: { data: Partial<AIConfig>, onChange: (up
                         <Bot className="w-8 h-8 text-white" />
                     </div>
                     <div>
-                        <CardTitle className="text-2xl font-bold text-slate-900">Assistente IA</CardTitle>
+                        <CardTitle className="text-2xl font-bold text-slate-900">Comercial</CardTitle>
                         <p className="text-slate-500 font-medium">Configure o comportamento da assistente automática.</p>
                     </div>
                 </div>
@@ -385,7 +385,7 @@ function AISettings({ data, onChange }: { data: Partial<AIConfig>, onChange: (up
                         className="w-full px-4 py-2 border border-slate-200 rounded-lg font-medium text-slate-700 h-24"
                         value={data.bio_text || ''}
                         onChange={(e) => onChange({ bio_text: e.target.value })}
-                        placeholder="Ex: Olá! Sou a assistente IA da Metaltres..."
+                        placeholder="Ex: Olá! Sou do Comercial da Metaltres..."
                     />
                 </div>
 
